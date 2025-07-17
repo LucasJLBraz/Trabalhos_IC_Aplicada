@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import stats
 
 
 
@@ -144,6 +145,50 @@ def plot_disperssao_hist_residuo(y_train: np.ndarray, y_train_pred: np.ndarray, 
     # Ajusta o layout
     plt.tight_layout()
     plt.show()
+
+
+# Função para calcular métricas de avaliação
+def calcular_metricas(y_true, y_pred, aux):
+    residuos = y_true - y_pred
+    eqm = np.mean(residuos ** 2)
+    reqm = np.sqrt(eqm)
+    r2 = 1 - (np.sum(residuos ** 2) / np.sum((y_true - np.mean(y_true)) ** 2))
+    hit_20 = aux.error_rit_rate(y_true, y_pred, 0.20)
+    hit_10 = aux.error_rit_rate(y_true, y_pred, 0.10)
+    return eqm, reqm, r2, hit_20, hit_10, residuos
+
+# Função para imprimir as métricas com média e desvio padrão
+def imprimir_metricas(eqms, reqms, r2s, hits_20, hits_10):
+    print(f"Erro Quadrático Médio (EQM): {np.mean(eqms):.4f} ± {np.std(eqms):.4f}")
+    print(f"Raiz do Erro Quadrático Médio (REQM): {np.mean(reqms):.4f} ± {np.std(reqms):.4f}")
+    print(f"Hit rate 20%: {np.mean(hits_20):.4f} ± {np.std(hits_20):.4f}")
+    print(f"Hit rate 10%: {np.mean(hits_10):.4f} ± {np.std(hits_10):.4f}\n")
+
+# Função para análise dos resíduos (shapiro + gráfico)
+def analisar_residuos(y_train, y_pred_train, y_test, y_pred_test, aux, titulo=''):
+    aux.plot_disperssao_hist_residuo(y_train, y_pred_train, y_test, y_pred_test, titulo)
+
+    res_train = y_train - y_pred_train
+    res_test = y_test - y_pred_test
+
+    shapiro_treino = stats.shapiro(res_train)
+    shapiro_teste = stats.shapiro(res_test)
+
+    print("\n--- Análise de Gaussianidade dos Resíduos ---")
+    print(f"Shapiro-Wilk (Treino): Estatística={shapiro_treino.statistic:.4f}, p-valor={shapiro_treino.pvalue:.4f}")
+    print(f"Shapiro-Wilk (Teste): Estatística={shapiro_teste.statistic:.4f}, p-valor={shapiro_teste.pvalue:.4f}")
+
+    if shapiro_treino.pvalue < 0.05:
+        print("Resíduos de treino NÃO seguem distribuição normal.")
+    else:
+        print("Resíduos de treino seguem distribuição normal.")
+
+# Função para imprimir correlações
+def imprimir_correlacoes(corrs_treino, corrs_teste, r2s):
+    print("--- Coeficientes de Correlação (Real vs. Previsto) ---")
+    print(f"Correlação Média (Treino): {np.mean(corrs_treino):.4f} ± {np.std(corrs_treino):.4f}")
+    print(f"Correlação Média (Teste): {np.mean(corrs_teste):.4f} ± {np.std(corrs_teste):.4f}")
+    print(f"Coeficiente de Determinação (R²): {np.mean(r2s):.4f} ± {np.std(r2s):.4f}")
 
 
 
