@@ -1,10 +1,21 @@
 black
 flake8
 isort
-loguru
+loguru~=0.7.3
 mkdocs
 pip
-python-dotenv
-tqdm
-typer
+python-dotenv~=1.1.1
+tqdm~=4.67.1
+typer~=0.16.0
 -e .
+
+ucimlrepo~=0.0.7
+trabalho_ic_aplicada~=0.0.1
+seaborn~=0.13.2
+matplotlib~=3.10.3
+rich~=14.0.0
+pandas~=2.3.1
+numpy~=2.2.6
+scikit-learn~=1.7.0
+trabalho_ic_aplicada~=0.0.1
+scipy~=1.15.3
