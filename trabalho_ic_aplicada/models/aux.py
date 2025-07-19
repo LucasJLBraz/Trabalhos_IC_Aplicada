@@ -166,7 +166,6 @@ def imprimir_metricas(eqms, reqms, r2s, hits_20, hits_10):
 
 # Função para análise dos resíduos (shapiro + gráfico)
 def analisar_residuos(y_train, y_pred_train, y_test, y_pred_test, aux, titulo=''):
-    aux.plot_disperssao_hist_residuo(y_train, y_pred_train, y_test, y_pred_test, titulo)
 
     res_train = y_train - y_pred_train
     res_test = y_test - y_pred_test
@@ -182,6 +181,9 @@ def analisar_residuos(y_train, y_pred_train, y_test, y_pred_test, aux, titulo=''
         print("Resíduos de treino NÃO seguem distribuição normal.")
     else:
         print("Resíduos de treino seguem distribuição normal.")
+
+
+    aux.plot_disperssao_hist_residuo(y_train, y_pred_train, y_test, y_pred_test, titulo)
 
 # Função para imprimir correlações
 def imprimir_correlacoes(corrs_treino, corrs_teste, r2s):
