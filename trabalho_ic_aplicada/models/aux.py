@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import stats
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def error_rit_rate(y_test:np.ndarray, y_pred:np.ndarray, porcentagem:float = 0.20) -> float:
@@ -85,8 +86,6 @@ def plot_disperssao_hist_residuo(y_train: np.ndarray, y_train_pred: np.ndarray, 
         y_test_pred (np.ndarray): Valores previstos pelo modelo no conjunto de teste.
         title (str): Titulo do plot.
     """
-    import matplotlib.pyplot as plt
-    import seaborn as sns
 
     # Calcula os resíduos
     residuos_train = y_train - y_train_pred
@@ -272,3 +271,41 @@ def normalizar_robusto(X: np.ndarray) -> np.ndarray:
     X_normalizado = (X - mediana) / intervalo_interquartil
 
     return X_normalizado
+
+
+def plot_folds_loss(train_losses, titulo='Histórico da Função de Perda - Treino (todos os folds)', ylabel='Loss (Erro Quadrático)', xlabel='Época'):
+    """
+    Plota todas as curvas de loss dos folds e também a curva média com desvio padrão.
+
+    Args:
+        train_losses (list of list or np.array): Lista onde cada elemento é uma lista/array com o histórico de loss de um fold.
+        titulo (str): Título do gráfico.
+        ylabel (str): Rótulo do eixo y.
+        xlabel (str): Rótulo do eixo x.
+    """
+    plt.figure(figsize=(10,6))
+    for i, loss_history in enumerate(train_losses):
+        plt.plot(loss_history, label=f'Fold {i+1}', alpha=0.5)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(titulo)
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # Média e desvio padrão entre folds
+    train_losses_array = np.array(train_losses)
+    mean_loss = train_losses_array.mean(axis=0)
+    std_loss = train_losses_array.std(axis=0)
+
+    plt.figure(figsize=(10,6))
+    plt.plot(mean_loss, color='black', label='Média dos folds', linewidth=2)
+    plt.fill_between(range(len(mean_loss)), mean_loss-std_loss, mean_loss+std_loss, color='gray', alpha=0.2, label='±1 Desvio padrão')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title("Loss médio e desvio padrão entre folds")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
