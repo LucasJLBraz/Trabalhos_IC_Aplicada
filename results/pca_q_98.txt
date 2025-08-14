@@ -1,0 +1,3 @@
+Escala: 40x40
+d (original): 1600
+q (>= 98%): 10
