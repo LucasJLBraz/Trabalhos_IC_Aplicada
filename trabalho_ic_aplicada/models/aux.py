@@ -327,7 +327,7 @@ def plot_folds_loss(train_losses, titulo='Histórico da Função de Perda - Trei
     """
     plt.figure(figsize=(10,6))
     for i, loss_history in enumerate(train_losses):
-        plt.plot(loss_history, label=f'Fold {i+1}', alpha=0.5)
+        plt.plot(loss_history, alpha=1)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(titulo)
@@ -342,7 +342,7 @@ def plot_folds_loss(train_losses, titulo='Histórico da Função de Perda - Trei
     std_loss = train_losses_array.std(axis=0)
 
     plt.figure(figsize=(10,6))
-    plt.plot(mean_loss, color='black', label='Média dos folds', linewidth=2)
+    plt.plot(mean_loss, color='black', linewidth=2)
     plt.fill_between(range(len(mean_loss)), mean_loss-std_loss, mean_loss+std_loss, color='gray', alpha=0.2, label='±1 Desvio padrão')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
