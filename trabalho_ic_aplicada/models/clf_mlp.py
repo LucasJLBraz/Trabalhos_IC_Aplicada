@@ -116,10 +116,16 @@ class MLPClassifier:
 
         return self
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def _forward(self, X):
         A = X
         f_act = _ACT[self.activation][0]
         for i in range(len(self.params_["W"]) - 1):
             A = f_act(A @ self.params_["W"][i] + self.params_["b"][i])
         Z = A @ self.params_["W"][-1] + self.params_["b"][-1]
-        return np.argmax(_softmax(Z), axis=1)
+        return _softmax(Z)
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        return self._forward(X)
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return self.predict_proba(X).argmax(axis=1)

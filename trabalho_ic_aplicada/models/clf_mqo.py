@@ -28,7 +28,18 @@ class LeastSquaresClassifier:
             self.W_ = np.linalg.pinv(Xb) @ Y
         return self
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
         Xb = self._add_bias(X)
         scores = Xb @ self.W_
-        return np.argmax(scores, axis=1)
+        # Normaliza scores para pseudo-probabilidades (não é um softmax real, mas funciona para ROC)
+        exp_scores = np.exp(scores - np.max(scores, axis=1, keepdims=True))
+        return exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return self.predict_proba(X).argmax(axis=1)
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        Xb = self._add_bias(X)
+        scores = Xb @ self.W_
+        # Normaliza scores para pseudo-probabilidades (não é um softmax real, mas funciona para ROC)
+        exp_scores = np.exp(scores - np.max(scores, axis=1, keepdims=True))
+        return exp_scores / np.sum(exp_scores, axis=1, keepdims=True)

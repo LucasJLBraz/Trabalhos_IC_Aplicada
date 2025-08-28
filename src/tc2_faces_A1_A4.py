@@ -3,6 +3,7 @@ import os, time, csv
 import numpy as np
 import matplotlib.pyplot as plt
 
+# from notebooks.TC2.analise_pca_luz_controlada import DATA_ROOT
 from trabalho_ic_aplicada.dataset_faces import load_scales_from_root
 from trabalho_ic_aplicada.models.preprocess_np import apply_norm, NormSpec
 from trabalho_ic_aplicada.models.pca_np import PCA_np
@@ -13,12 +14,13 @@ from trabalho_ic_aplicada.models.clf_mlp import MLPClassifier
 # =========================
 # CONFIG
 # =========================
-DATA_ROOT = "./data/raw/Kit_projeto_FACES"
+# DATA_ROOT = "./data/raw/Kit_projeto_FACES"
+DATA_ROOT = "/home/apo-note/Documents/Github/Trabalhos_IC_Aplicada/data/raw/Kit_projeto_FACES"
 SCALES    = [(20,20), (30,30), (40,40)]  # compare as que quiser
-N_SAMPLES_RS   = 60   # nº de amostras da busca aleatória por modelo
+N_SAMPLES_RS   = 100   # nº de amostras da busca aleatória por modelo
 K_SELECT_EVAL  = 10   # repetições por candidato na seleção (trade-off tempo/estabilidade)
 N_REPEATS_BEST = 50   # repetições finais para estatísticas da Tabela (pedidas no enunciado)
-RESULTS_DIR    = "./results"
+RESULTS_DIR    = "./results/TC2/"
 
 # =========================
 # Utils
@@ -170,7 +172,8 @@ def select_best_by_random_search(
                             norm_name=norm, use_pca=use_pca, pca_q=pca_q,
                             seed=seed_base + s*100 + k)
             reps.append(out)
-        score = np.mean([r["acc"] for r in reps])
+        score = np.mean([r["f1_macro"] for r in reps])
+        # score = np.mean([r["acc"] for r in reps])
         if (best is None) or (score > best["score"]):
             best = {"params": params, "norm": norm, "score": float(score)}
     return best
@@ -199,8 +202,8 @@ def benchmark_scale_times(datasets, outpath):
     models = {
         "MQ":      lambda: LeastSquaresClassifier(l2=0.0),
         "PL":      lambda: SoftmaxRegression(lr=1e-2, epochs=200, l2=0.0, opt="sgd"),
-        "MLP-1H":  lambda: MLPClassifier(hidden=(64,),    activation="relu", lr=1e-2, epochs=200, opt="adam"),
-        "MLP-2H":  lambda: MLPClassifier(hidden=(64, 32), activation="relu", lr=1e-2, epochs=200, opt="adam"),
+        "MLP-1H":  lambda: MLPClassifier(hidden=(64,),    activation="tanh", lr=1e-2, epochs=200, opt="sgd"),
+        "MLP-2H":  lambda: MLPClassifier(hidden=(64, 32), activation="tanh", lr=1e-2, epochs=200, opt="sgd"),
     }
     scales = []
     times = {m:[] for m in models}
@@ -241,8 +244,8 @@ if __name__ == "__main__":
     benchmark_scale_times(datasets, fig_path)
     print(f"[OK] Figura salva em {fig_path}")
 
-    # Escolha a escala “OK” (aqui uso a última; reordene SCALES se quiser outra)
-    scale_label, X_sel, y_sel = datasets[-1]
+    # Escolha a escala “OK”
+    scale_label, X_sel, y_sel = datasets[1]  # (30,30)
     d = X_sel.shape[1]  # q = d para PCA rotate
 
     # ===== (A2) Random search SEM PCA -> melhor de cada modelo, depois 50x repetições =====
@@ -297,13 +300,69 @@ if __name__ == "__main__":
             "acc_mean": agg["acc_mean"], "acc_std": agg["acc_std"], "acc_min": agg["acc_min"], "acc_max": agg["acc_max"], "acc_median": agg["acc_median"],
             "precision_mean": agg["precision_macro_mean"], "recall_mean": agg["recall_macro_mean"], "f1_mean": agg["f1_macro_mean"],
             "fit_time_mean": agg["fit_time_mean"], "pred_time_mean": agg["pred_time_mean"], "total_time_mean": agg["total_time_mean"],
+            "__internal_best_obj": best
         }
         rows_t2.append(row)
 
     with open(os.path.join(RESULTS_DIR, "tabela2.csv"), "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
-        for r in rows_t2: w.writerow(r)
+        for r in rows_t2:
+            row_to_write = r.copy()
+            del row_to_write['__internal_best_obj']
+            w.writerow(row_to_write)
     print(f"[OK] A4: results -> {os.path.join(RESULTS_DIR, 'tabela2.csv')}")
-
-    print("A1–A4 finalizado.")
+    #
+    # # ---- (Extra) Plot Matriz de Confusão para o melhor modelo de cada cenário ----
+    # def plot_confusion_matrix(M, classes, title, outpath):
+    #     import seaborn as sns
+    #     plt.figure(figsize=(8, 8))
+    #     sns.heatmap(M, annot=True, fmt="d", cbar=False, cmap="Blues",
+    #                 xticklabels=classes, yticklabels=classes)
+    #     plt.title(title)
+    #     plt.xlabel("Predito")
+    #     plt.ylabel("Verdadeiro")
+    #     plt.tight_layout()
+    #     os.makedirs(os.path.dirname(outpath), exist_ok=True)
+    #     plt.savefig(outpath, dpi=150)
+    #     plt.close()
+    #
+    # sampler_map = {"MQ": MQSampler(), "PL": PLSampler(), "MLP-1H": MLP1HSampler(), "MLP-2H": MLP2HSampler()}
+    # C = int(y_sel.max()) + 1
+    # classes_labels = [f"S{i+1}" for i in range(C)]
+    # rng_plot = np.random.default_rng(1234)
+    # tr, te = train_test_split_stratified(y_sel, 0.8, rng_plot)
+    # Xtr, Xte, ytr, yte = X_sel[tr], X_sel[te], y_sel[tr], y_sel[te]
+    #
+    # # Matriz para A2 (sem PCA)
+    # best_row_a2 = max(rows_t1, key=lambda r: r['acc_mean'])
+    # model_name_a2 = best_row_a2['Model']
+    # best_obj_a2 = best_row_a2['__internal_best_obj']
+    # sampler_a2 = sampler_map[model_name_a2]
+    # model_a2 = sampler_a2.to_model(best_obj_a2['params'])
+    #
+    # Xtr_a2, Xte_a2, _ = apply_norm(Xtr, Xte, NormSpec(best_obj_a2["norm"]))
+    # model_a2.fit(Xtr_a2, ytr, n_classes=C)
+    # yhat_a2 = model_a2.predict(Xte_a2)
+    # M_a2 = confusion_matrix(yte, yhat_a2, C)
+    # cm_path_a2 = os.path.join(RESULTS_DIR, f"cm_A2_{model_name_a2}.png")
+    # plot_confusion_matrix(M_a2, classes_labels, f"Matriz de Confusão - A2 (Sem PCA) / {model_name_a2}", cm_path_a2)
+    # print(f"[OK] Figura Matriz de Confusão (A2) salva em {cm_path_a2}")
+    #
+    # # Matriz para A4 (com PCA)
+    # best_row_a4 = max(rows_t2, key=lambda r: r['acc_mean'])
+    # model_name_a4 = best_row_a4['Model']
+    # best_obj_a4 = best_row_a4['__internal_best_obj']
+    # sampler_a4 = sampler_map[model_name_a4]
+    # model_a4 = sampler_a4.to_model(best_obj_a4['params'])
+    #
+    # pca = PCA_np(q=d); Xtr_p = pca.fit_transform(Xtr); Xte_p = pca.transform(Xte)
+    # Xtr_a4, Xte_a4, _ = apply_norm(Xtr_p, Xte_p, NormSpec(best_obj_a4["norm"]))
+    # model_a4.fit(Xtr_a4, ytr, n_classes=C)
+    # yhat_a4 = model_a4.predict(Xte_a4)
+    # M_a4 = confusion_matrix(yte, yhat_a4, C)
+    # cm_path_a4 = os.path.join(RESULTS_DIR, f"cm_A4_{model_name_a4}.png")
+    # plot_confusion_matrix(M_a4, classes_labels, f"Matriz de Confusão - A4 (PCA Rotação) / {model_name_a4}", cm_path_a4)
+    # print(f"[OK] Figura Matriz de Confusão (A4) salva em {cm_path_a4}")
+    #
+    # print("A1–A4 finalizado.")

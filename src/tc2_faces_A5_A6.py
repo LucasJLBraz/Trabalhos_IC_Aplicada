@@ -17,11 +17,11 @@ DATA_ROOT       = "./data/raw/Kit_projeto_FACES"
 SELECT_SCALE_ID = -1   # use a “escala OK” (ex.: última da lista)
 VAR_TARGET      = 0.98 # ≥ 98% da variância
 
-SCALES    = [(40,40)]  # compare as que quiser
-N_SAMPLES_RS   = 60   # nº de amostras da busca aleatória por modelo
+SCALES    = [(30,30)]  # compare as que quiser
+N_SAMPLES_RS   = 100   # nº de amostras da busca aleatória por modelo
 K_SELECT_EVAL  = 10   # repetições por candidato na seleção (trade-off tempo/estabilidade)
 N_REPEATS_BEST = 50   # repetições finais para estatísticas da Tabela (pedidas no enunciado)
-RESULTS_DIR    = "./results"
+RESULTS_DIR    = "./results/TC2/"
 
 # =========================
 # Utils
@@ -130,7 +130,7 @@ class MLP1HSampler:
             "epochs":     int(rng.choice([150, 200, 300])),
             "l2":         float(rng.choice([0.0, 1e-4, 1e-3])),
             "opt":        str(rng.choice(["sgd","momentum","nesterov","rmsprop","adam"])),
-            "clip_grad":  float(rng.choice([2.0, 5.0, 10.0])),
+            "clip_grad":  float(rng.choice([2.0, 5.0, 10.0]))
         }
     def to_model(self, p):
         return MLPClassifier(hidden=p["hidden"], activation=p["activation"], lr=p["lr"],
@@ -148,7 +148,7 @@ class MLP2HSampler:
             "epochs":     int(rng.choice([150, 200, 300])),
             "l2":         float(rng.choice([0.0, 1e-4, 1e-3])),
             "opt":        str(rng.choice(["sgd","momentum","nesterov","rmsprop","adam"])),
-            "clip_grad":  float(rng.choice([2.0, 5.0, 10.0])),
+            "clip_grad":  float(rng.choice([2.0, 5.0, 10.0]))
         }
     def to_model(self, p):
         return MLPClassifier(hidden=p["hidden"], activation=p["activation"], lr=p["lr"],
@@ -170,7 +170,10 @@ def select_best_by_random_search(
                             norm_name=norm, use_pca=use_pca, pca_q=pca_q,
                             seed=seed_base + s*100 + k)
             reps.append(out)
-        score = np.mean([r["acc"] for r in reps])
+            
+        score = np.mean([r["f1_macro"] for r in reps])
+
+        # score = np.mean([r["acc"] for r in reps])
         if (best is None) or (score > best["score"]):
             best = {"params": params, "norm": norm, "score": float(score)}
     return best
@@ -258,6 +261,7 @@ if __name__ == "__main__":
             "acc_mean": agg["acc_mean"], "acc_std": agg["acc_std"], "acc_min": agg["acc_min"], "acc_max": agg["acc_max"], "acc_median": agg["acc_median"],
             "precision_mean": agg["precision_macro_mean"], "recall_mean": agg["recall_macro_mean"], "f1_mean": agg["f1_macro_mean"],
             "fit_time_mean": agg["fit_time_mean"], "pred_time_mean": agg["pred_time_mean"], "total_time_mean": agg["total_time_mean"],
+            "__internal_best_obj": best
         }
         rows_t3.append(row)
 
@@ -268,7 +272,49 @@ if __name__ == "__main__":
     with open(os.path.join(RESULTS_DIR, "tabela3.csv"), "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
-        for r in rows_t3: w.writerow(r)
+        for r in rows_t3:
+            row_to_write = r.copy()
+            del row_to_write['__internal_best_obj']
+            w.writerow(row_to_write)
     print(f"[OK] A6 (PCA reduzida): results -> {os.path.join(RESULTS_DIR, 'tabela3.csv')}")
 
-    print("A5–A6 finalizado.")
+    # # ---- (Extra) Plot Matriz de Confusão para o melhor modelo da A6 ----
+    # def plot_confusion_matrix(M, classes, title, outpath):
+    #     import seaborn as sns
+    #     plt.figure(figsize=(8, 8))
+    #     sns.heatmap(M, annot=True, fmt="d", cbar=False, cmap="Blues",
+    #                 xticklabels=classes, yticklabels=classes)
+    #     plt.title(title)
+    #     plt.xlabel("Predito")
+    #     plt.ylabel("Verdadeiro")
+    #     plt.tight_layout()
+    #     os.makedirs(os.path.dirname(outpath), exist_ok=True)
+    #     plt.savefig(outpath, dpi=150)
+    #     plt.close()
+    #
+    # sampler_map = {"MQ": MQSampler(), "PL": PLSampler(), "MLP-1H": MLP1HSampler(), "MLP-2H": MLP2HSampler()}
+    # C = int(y_sel.max()) + 1
+    # classes_labels = [f"S{i+1}" for i in range(C)]
+    # rng_plot = np.random.default_rng(1234)
+    # tr, te = train_test_split_stratified(y_sel, 0.8, rng_plot)
+    # Xtr, Xte, ytr, yte = X_sel[tr], X_sel[te], y_sel[tr], y_sel[te]
+    #
+    # best_row_a6 = max(rows_t3, key=lambda r: r['acc_mean'])
+    # model_name_a6 = best_row_a6['Model']
+    # best_obj_a6 = best_row_a6['__internal_best_obj']
+    # sampler_a6 = sampler_map[model_name_a6]
+    # model_a6 = sampler_a6.to_model(best_obj_a6['params'])
+    #
+    # pca = PCA_np(q=q_star)
+    # Xtr_p = pca.fit_transform(Xtr)
+    # Xte_p = pca.transform(Xte)
+    # Xtr_a6, Xte_a6, _ = apply_norm(Xtr_p, Xte_p, NormSpec(best_obj_a6["norm"]))
+    #
+    # model_a6.fit(Xtr_a6, ytr, n_classes=C)
+    # yhat_a6 = model_a6.predict(Xte_a6)
+    # M_a6 = confusion_matrix(yte, yhat_a6, C)
+    # cm_path_a6 = os.path.join(RESULTS_DIR, f"cm_A6_{model_name_a6}.png")
+    # plot_confusion_matrix(M_a6, classes_labels, f"Matriz de Confusão - A6 (PCA Reduzido) / {model_name_a6}", cm_path_a6)
+    # print(f"[OK] Figura Matriz de Confusão (A6) salva em {cm_path_a6}")
+    #
+    # print("A5–A6 finalizado.")

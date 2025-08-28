@@ -13,13 +13,13 @@ from trabalho_ic_aplicada.models.clf_mlp import MLPClassifier
 # CONFIG
 # =========================
 DATA_ROOT       = "./data/raw/Kit_projeto_FACES"
-SCALES          = [(20,20), (30,30), (40,40)]  # use a(s) mesma(s) de A5/A6
+SCALES          = [(30,30)]  # use a(s) mesma(s) de A5/A6
 SELECT_SCALE_ID = -1
-RESULTS_DIR     = "./results"
+RESULTS_DIR     = "./results/TC2/"
 BASELINE_T3_CSV = os.path.join(RESULTS_DIR, "tabela3.csv")  # gerado na A6
 
 # Busca e avaliação (iguais à A6)
-N_SAMPLES_RS   = 50    # amostras no random search por modelo
+N_SAMPLES_RS   = 100    # amostras no random search por modelo
 K_SELECT_EVAL  = 10# repetições por candidato na seleção (estabilidade)
 N_REPEATS_BEST = 50    # repetições finais para tabela
 
@@ -223,7 +223,8 @@ def select_best_by_random_search(X, y, q, sampler, n_samples=N_SAMPLES_RS, k_sel
         for k in range(k_select):
             out = eval_once_boxcox(X, y, q, model_ctor=lambda: sampler.to_model(params), seed=seed_base + s*100 + k)
             reps.append(out)
-        score = float(np.mean([r["acc"] for r in reps]))
+        score = np.mean([r["f1_macro"] for r in reps])
+        # score = float(np.mean([r["acc"] for r in reps]))
         if (best is None) or (score > best["score"]):
             best = {"params": params, "score": score}
     return best
