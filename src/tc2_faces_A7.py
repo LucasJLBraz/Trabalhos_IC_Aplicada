@@ -19,7 +19,7 @@ RESULTS_DIR     = "./results/TC2/"
 BASELINE_T3_CSV = os.path.join(RESULTS_DIR, "tabela3.csv")  # gerado na A6
 
 # Busca e avaliação (iguais à A6)
-N_SAMPLES_RS   = 100    # amostras no random search por modelo
+N_SAMPLES_RS   = 200    # amostras no random search por modelo
 K_SELECT_EVAL  = 10# repetições por candidato na seleção (estabilidade)
 N_REPEATS_BEST = 50    # repetições finais para tabela
 

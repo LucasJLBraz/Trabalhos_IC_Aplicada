@@ -14,10 +14,10 @@ from trabalho_ic_aplicada.models.clf_mlp import MLPClassifier
 # =========================
 # CONFIG
 # =========================
-# DATA_ROOT = "./data/raw/Kit_projeto_FACES"
-DATA_ROOT = "/home/apo-note/Documents/Github/Trabalhos_IC_Aplicada/data/raw/Kit_projeto_FACES"
+DATA_ROOT = "./data/raw/Kit_projeto_FACES"
+# DATA_ROOT = "/home/apo-note/Documents/Github/Trabalhos_IC_Aplicada/data/raw/Kit_projeto_FACES"
 SCALES    = [(20,20), (30,30), (40,40)]  # compare as que quiser
-N_SAMPLES_RS   = 100   # nº de amostras da busca aleatória por modelo
+N_SAMPLES_RS   = 200   # nº de amostras da busca aleatória por modelo
 K_SELECT_EVAL  = 10   # repetições por candidato na seleção (trade-off tempo/estabilidade)
 N_REPEATS_BEST = 50   # repetições finais para estatísticas da Tabela (pedidas no enunciado)
 RESULTS_DIR    = "./results/TC2/"

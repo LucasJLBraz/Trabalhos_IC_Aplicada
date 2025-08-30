@@ -16,7 +16,7 @@ SCALES          = [(30,30)]
 SELECT_SCALE_ID = -1
 RESULTS_DIR     = "./results/TC2/"
 
-N_SAMPLES_RS   = 100
+N_SAMPLES_RS   = 200
 K_SELECT_EVAL  = 10
 N_REPEATS_BEST = 50
 
