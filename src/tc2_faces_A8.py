@@ -11,12 +11,12 @@ from trabalho_ic_aplicada.models.clf_mlp import MLPClassifier
 # =========================
 # CONFIG (iguais aos seus)
 # =========================
-DATA_ROOT       = "./data/raw/Kit_projeto_FACES"
+DATA_ROOT = "/home/apo-note/Documents/Github/Trabalhos_IC_Aplicada/data/raw/Kit_projeto_FACES"
 SCALES          = [(30,30)]
 SELECT_SCALE_ID = -1
 RESULTS_DIR     = "./results/TC2/"
 
-N_SAMPLES_RS   = 100
+N_SAMPLES_RS   = 200
 K_SELECT_EVAL  = 10
 N_REPEATS_BEST = 50
 
@@ -159,7 +159,7 @@ def binary_metrics(y_true_bin, y_pred_bin):
     fpr = FP / max(1, FP + TN)      # taxa de falsos positivos (autorizado negado)
     return {"acc": acc, "tpr": tpr, "ppv": ppv, "fnr": fnr, "fpr": fpr}
 
-def summarize_runs(run_list, keys=("acc","fnr","fpr","tpr","ppv","fit_time","pred_time","total_time")):
+def summarize_runs(run_list, keys=("acc","fnr","fpr","tpr","ppv","f1_intruso","fit_time","pred_time","total_time")):
     """
     Summarizes performance metrics and timing statistics for a list of runs, calculating
     mean, standard deviation, minimum, maximum, and median for each selected key.
@@ -169,7 +169,7 @@ def summarize_runs(run_list, keys=("acc","fnr","fpr","tpr","ppv","fit_time","pre
     :type run_list: list[dict]
     :param keys: Tuple of keys to extract from the dictionaries for summarization. The default
         keys include common metrics such as "acc" (accuracy), "fnr" (false negative rate),
-        "fpr" (false positive rate), "tpr" (true positive rate), "ppv" (positive predictive value),
+        "fpr" (false positive rate), "tpr" (recall), "ppv" (precision), "f1_intruso" (f1-score),
         and timing metrics like "fit_time", "pred_time", and "total_time".
     :type keys: tuple[str]
     :return: A dictionary containing the aggregated statistics (mean, standard deviation, minimum,
@@ -272,7 +272,7 @@ class MLP1HSampler:
                 "epochs": int(rng.choice([150, 200, 300])),
                 "l2": float(rng.choice([0.0, 1e-4, 1e-3])),
                 "opt": str(rng.choice(["sgd","momentum","nesterov","rmsprop","adam"])),
-                "clip_grad": float(rng.choice([2.0, 5.0, 10.0]))}
+                "clip_grad": float(rng.choice([0.0, 2.0, 5.0, 10.0]))}
     def to_model(self, p):
         return MLPClassifier(hidden=p["hidden"], activation=p["activation"], lr=p["lr"],
                              epochs=p["epochs"], l2=p["l2"], opt=p["opt"], clip_grad=p["clip_grad"])
@@ -310,7 +310,7 @@ class MLP2HSampler:
                 "epochs": int(rng.choice([150, 200, 300])),
                 "l2": float(rng.choice([0.0, 1e-4, 1e-3])),
                 "opt": str(rng.choice(["sgd","momentum","nesterov","rmsprop","adam"])),
-                "clip_grad": float(rng.choice([2.0, 5.0, 10.0]))}
+                "clip_grad": float(rng.choice([0.0, 2.0, 5.0, 10.0]))}
     def to_model(self, p):
         return MLPClassifier(hidden=p["hidden"], activation=p["activation"], lr=p["lr"],
                              epochs=p["epochs"], l2=p["l2"], opt=p["opt"], clip_grad=p["clip_grad"])
@@ -496,14 +496,19 @@ if __name__ == "__main__":
             # métricas (média/disp.)
             "acc_mean": agg["acc_mean"], "acc_std": agg["acc_std"], "acc_min": agg["acc_min"], "acc_max": agg["acc_max"], "acc_median": agg["acc_median"],
             "fnr_mean": agg["fnr_mean"], "fnr_std": agg["fnr_std"], "fpr_mean": agg["fpr_mean"], "fpr_std": agg["fpr_std"],
-            "tpr_mean": agg["tpr_mean"], "ppv_mean": agg["ppv_mean"],
+            "recall_mean": agg["tpr_mean"], "recall_std": agg["tpr_std"], "recall_min": agg["tpr_min"], "recall_max": agg["tpr_max"], "recall_median": agg["tpr_median"],
+            "precision_mean": agg["ppv_mean"], "precision_std": agg["ppv_std"], "precision_min": agg["ppv_min"], "precision_max": agg["ppv_max"], "precision_median": agg["ppv_median"],
+            "f1_score_mean": agg["f1_intruso_mean"], "f1_score_std": agg["f1_intruso_std"], "f1_score_min": agg["f1_intruso_min"], "f1_score_max": agg["f1_intruso_max"], "f1_score_median": agg["f1_intruso_median"],
             "fit_time_mean": agg["fit_time_mean"], "pred_time_mean": agg["pred_time_mean"], "total_time_mean": agg["total_time_mean"],
         }
         rows.append(row)
 
     cols = ["Scale","q","Model","Hidden","Act","Opt","LR","Epochs","L2","Clip",
             "acc_mean","acc_std","acc_min","acc_max","acc_median",
-            "fnr_mean","fnr_std","fpr_mean","fpr_std","tpr_mean","ppv_mean",
+            "fnr_mean","fnr_std","fpr_mean","fpr_std",
+            "recall_mean", "recall_std", "recall_min", "recall_max", "recall_median",
+            "precision_mean", "precision_std", "precision_min", "precision_max", "precision_median",
+            "f1_score_mean", "f1_score_std", "f1_score_min", "f1_score_max", "f1_score_median",
             "fit_time_mean","pred_time_mean","total_time_mean"]
 
     out_csv = os.path.join(RESULTS_DIR, "tabela4_intruso.csv")

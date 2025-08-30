@@ -17,7 +17,7 @@ from trabalho_ic_aplicada.models.clf_mlp import MLPClassifier
 # DATA_ROOT = "./data/raw/Kit_projeto_FACES"
 DATA_ROOT = "/home/apo-note/Documents/Github/Trabalhos_IC_Aplicada/data/raw/Kit_projeto_FACES"
 SCALES    = [(20,20), (30,30), (40,40)]  # compare as que quiser
-N_SAMPLES_RS   = 100   # nº de amostras da busca aleatória por modelo
+N_SAMPLES_RS   = 200   # nº de amostras da busca aleatória por modelo
 K_SELECT_EVAL  = 10   # repetições por candidato na seleção (trade-off tempo/estabilidade)
 N_REPEATS_BEST = 50   # repetições finais para estatísticas da Tabela (pedidas no enunciado)
 RESULTS_DIR    = "./results/TC2/"
@@ -123,7 +123,7 @@ class PLSampler:
 class MLP1HSampler:
     def __call__(self, rng):
         acts   = ["tanh","sigmoid","relu","leaky_relu","relu6","swish"]
-        h1     = [16, 32, 64, 128, 256, 512]
+        h1     = [4, 8, 16, 32, 64, 128, 256, 512]
         return {
             "hidden":     (int(rng.choice(h1)),),
             "activation": str(rng.choice(acts)),
@@ -131,7 +131,7 @@ class MLP1HSampler:
             "epochs":     int(rng.choice([150, 200, 300])),
             "l2":         float(rng.choice([0.0, 1e-4, 1e-3])),
             "opt":        str(rng.choice(["sgd","momentum","nesterov","rmsprop","adam"])),
-            "clip_grad":  float(rng.choice([2.0, 5.0, 10.0])),
+            "clip_grad":  float(rng.choice([0.0, 2.0, 5.0, 10.0])),
         }
     def to_model(self, p):
         return MLPClassifier(hidden=p["hidden"], activation=p["activation"], lr=p["lr"],
@@ -140,8 +140,8 @@ class MLP1HSampler:
 class MLP2HSampler:
     def __call__(self, rng):
         acts   = ["tanh","sigmoid","relu","leaky_relu","relu6","swish"]
-        h1     = [16, 32, 64, 128, 256, 512]
-        h2     = [16, 32, 64, 128, 256, 512]
+        h1     = [4, 8, 16, 32, 64, 128, 256, 512]
+        h2     = [4, 8, 16, 32, 64, 128, 256, 512]
         return {
             "hidden":     (int(rng.choice(h1)), int(rng.choice(h2))),
             "activation": str(rng.choice(acts)),
@@ -149,7 +149,7 @@ class MLP2HSampler:
             "epochs":     int(rng.choice([150, 200, 300])),
             "l2":         float(rng.choice([0.0, 1e-4, 1e-3])),
             "opt":        str(rng.choice(["sgd","momentum","nesterov","rmsprop","adam"])),
-            "clip_grad":  float(rng.choice([2.0, 5.0, 10.0])),
+            "clip_grad":  float(rng.choice([0.0, 2.0, 5.0, 10.0])),
         }
     def to_model(self, p):
         return MLPClassifier(hidden=p["hidden"], activation=p["activation"], lr=p["lr"],
@@ -268,6 +268,7 @@ if __name__ == "__main__":
             "Opt": P.get("opt",""), "Act": P.get("activation",""),
             "Hidden": str(P.get("hidden","")), "LR": P.get("lr",""),
             "Epochs": P.get("epochs",""), "L2": P.get("l2",""),
+            "Clip_grad": P.get("clip_grad"),
             "acc_mean": agg["acc_mean"], "acc_std": agg["acc_std"], "acc_min": agg["acc_min"], "acc_max": agg["acc_max"], "acc_median": agg["acc_median"],
             "precision_mean": agg["precision_macro_mean"], "recall_mean": agg["recall_macro_mean"], "f1_mean": agg["f1_macro_mean"],
             "fit_time_mean": agg["fit_time_mean"], "pred_time_mean": agg["pred_time_mean"], "total_time_mean": agg["total_time_mean"],
@@ -275,7 +276,7 @@ if __name__ == "__main__":
         rows_t1.append(row)
 
     # write Tabela 1
-    cols = ["Scale","q","Model","Norm","Opt","Act","Hidden","LR","Epochs","L2",
+    cols = ["Scale","q","Model","Norm","Opt","Act","Hidden","LR","Epochs","L2", "Clip_grad",
             "acc_mean","acc_std","acc_min","acc_max","acc_median",
             "precision_mean","recall_mean","f1_mean",
             "fit_time_mean","pred_time_mean","total_time_mean"]
@@ -297,6 +298,7 @@ if __name__ == "__main__":
             "Opt": P.get("opt",""), "Act": P.get("activation",""),
             "Hidden": str(P.get("hidden","")), "LR": P.get("lr",""),
             "Epochs": P.get("epochs",""), "L2": P.get("l2",""),
+            "Clip_grad": P.get("clip_grad"),
             "acc_mean": agg["acc_mean"], "acc_std": agg["acc_std"], "acc_min": agg["acc_min"], "acc_max": agg["acc_max"], "acc_median": agg["acc_median"],
             "precision_mean": agg["precision_macro_mean"], "recall_mean": agg["recall_macro_mean"], "f1_mean": agg["f1_macro_mean"],
             "fit_time_mean": agg["fit_time_mean"], "pred_time_mean": agg["pred_time_mean"], "total_time_mean": agg["total_time_mean"],

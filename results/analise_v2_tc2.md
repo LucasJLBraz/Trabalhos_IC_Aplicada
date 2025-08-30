@@ -11,11 +11,15 @@ Esta análise aprofunda a revisão anterior, incorporando a crítica fornecida e
 Contudo, uma análise detalhada revela **fragilidades metodológicas e omissões sistemáticas no relatório** que são críticas a nível de mestrado. A principal falha não está na execução do código, mas na **justificativa das escolhas** e na **comunicação incompleta dos resultados**, o que impede a reprodutibilidade e a validação externa baseada apenas no texto. O trabalho é bom, mas carece do rigor analítico e da transparência esperados em uma dissertação ou artigo científico.
 
 > **Nota sobre Evolução Metodológica:** Conforme as discussões desta análise, o critério de seleção de hiperparâmetros nos scripts foi atualizado de 'acurácia' para 'F1-Score (macro)'. Embora a presente análise se baseie nos resultados originais (gerados com acurácia), esta correção metodológica será fundamental para a geração de novos resultados e a subsequente reescrita do relatório final, tornando-o mais robusto e alinhado às melhores práticas.
+> UTILZAMOS 100 BUSCAS AO INVES DE 60 para otimizar os modelos.
 
 ---
 
 ## 2. Inconsistências Críticas: Relatório vs. Código vs. Resultados
 20X20 FOI UTILIZADO AO INVEZ DE 40X40. O MOTIVO FOI CUSTO COMPUTACIONAL.
+
+> 
+
 Uma verificação cruzada entre o PDF, os CSVs em `results/` e o código em `src/` revela uma falha sistemática: **as tabelas do relatório omitem hiperparâmetros essenciais**, tornando a replicação a partir do texto impossível.
 
 **Falha Central: Omissão de Hiperparâmetros de Treino**

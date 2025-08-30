@@ -2,6 +2,7 @@
 import os
 import re
 import numpy as np
+from PIL import Image, ImageOps
 
 try:
     import imageio.v3 as iio  # leve e lê PGM/JPG/PNG
@@ -94,10 +95,18 @@ def _read_pgm_fallback(path: str) -> np.ndarray:
     return img
 
 def _imread_any(path: str) -> np.ndarray:
-    # tenta com imageio; se falhar (sem extensão, plugin), usa fallback PGM
     try:
-        return iio.imread(path)
+        img = iio.imread(path)
+        if img.ndim > 2 and img.shape[0] == 1:
+            img = img[0]
+        # Fix orientation using PIL if RGB
+        if img.ndim == 3 and img.shape[2] in (3, 4):
+            with Image.open(path) as pil_img:
+                pil_img = ImageOps.exif_transpose(pil_img)
+                img = np.array(pil_img)
+        return img
     except Exception:
+        print(f"Falling back to PGM reader for {path}")
         return _read_pgm_fallback(path)
 
 # -----------------------------
