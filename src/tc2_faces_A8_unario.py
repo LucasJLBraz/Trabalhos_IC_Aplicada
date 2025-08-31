@@ -8,7 +8,7 @@ from sklearn.ensemble import IsolationForest
 
 from trabalho_ic_aplicada.dataset_faces import build_face_dataset
 from trabalho_ic_aplicada.models.pca_np import PCA_np
-from trabalho_ic_aplicada.models.reg_mlp import MLPRegressor
+from trabalho_ic_aplicada.models.reg_mlp_class import MLPRegressor # Usaremos o regressor para o Autoencoder
 
 # =========================
 # CONFIG
