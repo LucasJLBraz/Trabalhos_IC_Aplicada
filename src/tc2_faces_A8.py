@@ -11,7 +11,8 @@ from trabalho_ic_aplicada.models.clf_mlp import MLPClassifier
 # =========================
 # CONFIG (iguais aos seus)
 # =========================
-DATA_ROOT = "/home/apo-note/Documents/Github/Trabalhos_IC_Aplicada/data/raw/Kit_projeto_FACES"
+# DATA_ROOT = "/home/apo-note/Documents/Github/Trabalhos_IC_Aplicada/data/raw/Kit_projeto_FACES"
+DATA_ROOT = "./data/raw/Kit_projeto_FACES"
 SCALES          = [(30,30)]
 SELECT_SCALE_ID = -1
 RESULTS_DIR     = "./results/TC2/"

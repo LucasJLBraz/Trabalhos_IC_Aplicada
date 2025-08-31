@@ -170,9 +170,9 @@ def select_best_by_random_search(
                             seed=seed_base + s*100 + k)
             reps.append(out)
             
-        score = np.mean([r["f1_macro"] for r in reps])
+        # score = np.mean([r["f1_macro"] for r in reps])
 
-        # score = np.mean([r["acc"] for r in reps])
+        score = np.mean([r["acc"] for r in reps])
         if (best is None) or (score > best["score"]):
             best = {"params": params, "norm": norm, "score": float(score)}
     return best

@@ -14,8 +14,8 @@ from trabalho_ic_aplicada.models.clf_mlp import MLPClassifier
 # =========================
 # CONFIG
 # =========================
-# DATA_ROOT = "./data/raw/Kit_projeto_FACES"
-DATA_ROOT = "/home/apo-note/Documents/Github/Trabalhos_IC_Aplicada/data/raw/Kit_projeto_FACES"
+DATA_ROOT = "./data/raw/Kit_projeto_FACES"
+# DATA_ROOT = "/home/apo-note/Documents/Github/Trabalhos_IC_Aplicada/data/raw/Kit_projeto_FACES"
 SCALES    = [(20,20), (30,30), (40,40)]  # compare as que quiser
 N_SAMPLES_RS   = 200   # nº de amostras da busca aleatória por modelo
 K_SELECT_EVAL  = 10   # repetições por candidato na seleção (trade-off tempo/estabilidade)
@@ -172,8 +172,8 @@ def select_best_by_random_search(
                             norm_name=norm, use_pca=use_pca, pca_q=pca_q,
                             seed=seed_base + s*100 + k)
             reps.append(out)
-        score = np.mean([r["f1_macro"] for r in reps])
-        # score = np.mean([r["acc"] for r in reps])
+        # score = np.mean([r["f1_macro"] for r in reps])
+        score = np.mean([r["acc"] for r in reps])
         if (best is None) or (score > best["score"]):
             best = {"params": params, "norm": norm, "score": float(score)}
     return best

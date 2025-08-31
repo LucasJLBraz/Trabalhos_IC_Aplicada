@@ -224,8 +224,8 @@ def select_best_by_random_search(X, y, q, sampler, n_samples=N_SAMPLES_RS, k_sel
         for k in range(k_select):
             out = eval_once_boxcox(X, y, q, model_ctor=lambda: sampler.to_model(params), seed=seed_base + s*100 + k)
             reps.append(out)
-        score = np.mean([r["f1_macro"] for r in reps])
-        # score = float(np.mean([r["acc"] for r in reps]))
+        # score = np.mean([r["f1_macro"] for r in reps])
+        score = float(np.mean([r["acc"] for r in reps]))
         if (best is None) or (score > best["score"]):
             best = {"params": params, "score": score}
     return best
