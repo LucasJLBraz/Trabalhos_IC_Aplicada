@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 
 # Script para executar todos os experimentos do Trabalho 2 em sequência.
 # Garante que o ambiente virtual uv seja usado.
