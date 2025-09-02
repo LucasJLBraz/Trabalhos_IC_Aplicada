@@ -1,0 +1,225 @@
+Otimo, quase perfeito, mas faltou alguns detalhes importantes da metodologia e resultados. Vamos lá, irei lhe passar o que faltou e você ira integrar. Estou lhe passando de volta uma versão levemente modificada do relatorio que você me deu.
+
+1- Faltou detalhar o espaço de busca. Deve ser incluso numa tabela, esse espaço de busca foi definido para as atividades que necessitaram retreinar o modelo, a ativade 8 teve um espaço diferente. 
+1.1 - Também aproveite para comentar detalhes como "Para evitar problemas com matrizes singulares, a solução utiliza a pseudo-inversa de Moore-Penrose (`np.linalg.pinv`) quando não há regularização L2. Com L2, ele resolve o sistema linear `(X.T @ X + λI) @ W = X.T @ Y`, que é numericamente mais estável."
+
+"""
+## 4. Modelos de Classificação e Detalhes de Implementação
+
+As implementações residem em `trabalho_ic_aplicada/models/` e foram projetadas para serem modulares.
+
+### 4.1. Classificador de Mínimos Quadrados (MQ)
+-   **Arquivo:** `clf_mqo.py`
+-   **Metodologia:** É um modelo linear que encontra uma solução analítica (forma fechada) para o problema de classificação, tratando-o como uma regressão em alvos one-hot-encoded. A predição é feita calculando `X @ W` e tomando a classe com o maior score.
+-   **Truque de Implementação:** Para evitar problemas com matrizes singulares, a solução utiliza a pseudo-inversa de Moore-Penrose (`np.linalg.pinv`) quando não há regularização L2. Com L2, ele resolve o sistema linear `(X.T @ X + λI) @ W = X.T @ Y`, que é numericamente mais estável.
+
+-   **Metodologia:** Solução analítica via pseudo-inversa ou resolvendo o sistema linear para a forma com regularização L2.
+-   **Espaço de Busca:**
+    -   `l2` (Regularização L2): `{0.0, 1e-4, 1e-3, 1e-2, 1e-1}`
+
+### 4.2. Perceptron Logístico (PL) / Regressão Softmax
+-   **Arquivo:** `clf_pl.py`
+-   **Metodologia:** É um classificador linear treinado com Gradiente Descendente. A camada de saída utiliza a função **softmax** para gerar probabilidades de pertencimento a cada classe, e a função de custo é a **entropia cruzada (cross-entropy)**, que é o padrão para problemas de classificação multi-classe.
+-   **Otimizadores:** A implementação vai além do gradiente descendente simples (SGD), permitindo o uso de otimizadores mais avançados como `Nesterov` e `Adam` (ver `optim.py`), que aceleram a convergência.
+-   **Metodologia:** Classificador linear treinado com gradiente descendente e função de custo de entropia cruzada.
+-   **Espaço de Busca:**
+    -   `lr` (Taxa de Aprendizado): `{0.005, 0.01, 0.02}`
+    -   `epochs` (Épocas de Treino): `{100, 200, 300}`
+    -   `l2` (Regularização L2): `{0.0, 1e-4, 1e-3}`
+    -   `opt` (Otimizador): `{sgd, momentum, nesterov, rmsprop, adam}`
+
+### 4.3. Perceptron de Múltiplas Camadas (MLP-1H e MLP-2H)
+-   **Arquivo:** `clf_mlp.py`
+-   **Metodologia:** São redes neurais com uma ou duas camadas ocultas, respectivamente. Assim como o PL, usam uma saída softmax e custo de entropia cruzada. A presença de camadas ocultas com funções de ativação não-lineares (como `tanh`, `ReLU`, `swish`, `Relu6`) permite que o modelo aprenda fronteiras de decisão complexas e não-lineares.
+
+
+class MQSampler:
+    def __call__(self, rng):
+        return {"l2": float(rng.choice([0.0, 1e-4, 1e-3, 1e-2, 1e-1]))}
+    def to_model(self, p): return LeastSquaresClassifier(l2=p["l2"])
+
+class PLSampler:
+    def __call__(self, rng):
+        return {
+            "lr":     float(rng.choice([5e-3, 1e-2, 2e-2])),
+            "epochs": int(rng.choice([100, 200, 300])),
+            "l2":     float(rng.choice([0.0, 1e-4, 1e-3])),
+            "opt":    str(rng.choice(["sgd","momentum","nesterov","rmsprop","adam"]))
+        }
+    def to_model(self, p): return SoftmaxRegression(lr=p["lr"], epochs=p["epochs"], l2=p["l2"], opt=p["opt"])
+
+class MLP1HSampler:
+    def __call__(self, rng):
+        acts   = ["tanh","sigmoid","relu","leaky_relu","relu6","swish"]
+        h1     = [4, 8, 16, 32, 64, 128, 256, 512]
+        return {
+            "hidden":     (int(rng.choice(h1)),),
+            "activation": str(rng.choice(acts)),
+            "lr":         float(rng.choice([5e-3, 1e-2, 2e-2])),
+            "epochs":     int(rng.choice([150, 200, 300])),
+            "l2":         float(rng.choice([0.0, 1e-4, 1e-3])),
+            "opt":        str(rng.choice(["sgd","momentum","nesterov","rmsprop","adam"])),
+            "clip_grad":  float(rng.choice([0.0, 2.0, 5.0, 10.0])),
+        }
+    def to_model(self, p):
+        return MLPClassifier(hidden=p["hidden"], activation=p["activation"], lr=p["lr"],
+                             epochs=p["epochs"], l2=p["l2"], opt=p["opt"], clip_grad=p["clip_grad"])
+
+class MLP2HSampler:
+    def __call__(self, rng):
+        acts   = ["tanh","sigmoid","relu","leaky_relu","relu6","swish"]
+        h1     = [4, 8, 16, 32, 64, 128, 256, 512]
+        h2     = [4, 8, 16, 32, 64, 128, 256, 512]
+        return {
+            "hidden":     (int(rng.choice(h1)), int(rng.choice(h2))),
+            "activation": str(rng.choice(acts)),
+            "lr":         float(rng.choice([5e-3, 1e-2, 2e-2])),
+            "epochs":     int(rng.choice([150, 200, 300])),
+            "l2":         float(rng.choice([0.0, 1e-4, 1e-3])),
+            "opt":        str(rng.choice(["sgd","momentum","nesterov","rmsprop","adam"])),
+            "clip_grad":  float(rng.choice([0.0, 2.0, 5.0, 10.0])),
+        }
+    def to_model(self, p):
+        return MLPClassifier(hidden=p["hidden"], activation=p["activation"], lr=p["lr"],
+                             epochs=p["epochs"], l2=p["l2"], opt=p["opt"], clip_grad=p["clip_grad"])
+"""
+
+2- Funções diferentes (swish e relu6 devem ser definidas)
+
+3- Faltou os hiperparametros selecionados de cada um dos modelos para as atividades.
+
+"""
+%ATIVIDADE 1-2
+
+\begin{table}[h!]
+\centering
+\caption{Resultados médios das Atividades 1–2 (sem PCA, escala \(30 \times 30\)).}
+\label{tab:tabela1}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Classificador} & \textbf{Média} & \textbf{Min} & \textbf{Max} & \textbf{Med} & \textbf{Std.} & \textbf{Tempo Total
+ (ms)}\\\hline
+\textbf{MQ}     & 0.965 & 0.911 & 1.000 & 0.978 & 0.024 & 8.516 \\
+\textbf{PL}     & 0.922 & 0.844 & 1.000 & 0.933 & 0.033 & 38.442 \\
+\textbf{MLP-1H} & 0.928 & 0.844 & 0.978 & 0.933 & 0.039 & 252.304 \\
+\textbf{MLP-2H} & 0.930 & 0.800 & 1.000 & 0.933 & 0.039 & 942.703 \\\hline
+\end{tabular}%
+}
+\end{table}
+
+% Please add the following required packages to your document preamble:
+% \usepackage{graphicx}
+\begin{table}[h!]
+\centering
+\caption{Parâmetros (sem PCA).}
+\label{tab:param_sem_pca}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccccccc}
+\hline
+\textbf{Classificador} & \textbf{Scale} & \textbf{Normalização}& \textbf{Otimizador} & \textbf{Ativação}& \textbf{Hidden} & \textbf{LR} & \textbf{Epochs} & \textbf{L2} & \textbf{Clip}\\ \hline
+\textbf{MQ}     & 30x30 & none       & --     & --      & --        & --       & --   & 0.0000& -- \\
+\textbf{PL}     & 30x30 & minmax     & adam   & --      & --        & 0.005& 200  & 0.0001& -- \\
+\textbf{MLP-1H} & 30x30 & minmax\_pm1& rmsprop& sigmoid & (128,)    & 0.005& 200  & 0.0000& 2.00\\
+\textbf{MLP-2H} & 30x30 & minmax     & adam   & tanh    & (256, 64) & 0.005& 300  & 0.0001& 5.00\\ \hline
+\end{tabular}%
+}
+\end{table}
+
+
+%ATIVIDADE 3-4
+\begin{table}[h!]
+\centering
+\caption{Resultados com a aplicação de PCA (sem redução).}
+\label{tab:tabela2}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Classificador} & \textbf{Média}& \textbf{Min} & \textbf{Max} & \textbf{Med} & \textbf{Std.} & \textbf{Tempo Total (ms)} \\\hline
+\textbf{MQ}     & 0.961 & 0.889 & 1.000 & 0.978 & 0.028 & 2.258 \\
+\textbf{PL}     & 0.867 & 0.778 & 0.933 & 0.867 & 0.037 & 29.576 \\
+\textbf{MLP-1H} & 0.826 & 0.644 & 0.956 & 0.822 & 0.062 & 109.268 \\
+\textbf{MLP-2H} & 0.840 & 0.689 & 0.956 & 0.822 & 0.053 & 299.309 \\\hline
+\end{tabular}%
+}
+\end{table}
+
+% Please add the following required packages to your document preamble:
+% \usepackage{graphicx}
+\begin{table}[h!]
+\centering
+\caption{Parâmetros (PCA sem redução).}
+\label{tab:param_pca_sem_red}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccccccccc}
+\hline
+\textbf{Classificador} & \textbf{Scale} & \textbf{q} & \textbf{Normalização}& \textbf{Otimizador} & \textbf{Ativação}& \textbf{Hidden} & \textbf{LR} & \textbf{Epochs} & \textbf{L2} & \textbf{Clip}\\ \hline
+\textbf{MQ}     & 30x30 & -- & none       & --     & --      & --        & --       & --   & 0.0000& -- \\
+\textbf{PL}     & 30x30 & -- & minmax     & sgd    & --      & --        & 0.0050& 200  & 0.0001& -- \\
+\textbf{MLP-1H} & 30x30 & -- & minmax\_pm1& rmsprop& sigmoid & (64,)     & 0.0050& 200  & 0.0001& 2.00\\
+\textbf{MLP-2H} & 30x30 & -- & minmax     & rmsprop& tanh    & (128, 32) & 0.0050& 300  & 0.0001& 5.00\\ \hline
+\end{tabular}%
+}
+\end{table}
+
+% ATIVIDADE 6
+
+
+\begin{table}[h!]
+\centering
+\caption{Resultados com a aplicação de PCA com redução.}
+\label{tab:tabela3}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Classificador} & \textbf{Média}& \textbf{Min} & \textbf{Max} & \textbf{Med} & \textbf{Std.} & \textbf{Tempo Total (ms)} \\\hline
+\textbf{MQ}     & 0.959 & 0.889 & 1.000 & 0.956 & 0.029 & 0.260 \\
+\textbf{PL}     & 0.959 & 0.889 & 1.000 & 0.956 & 0.029 & 21.692 \\
+\textbf{MLP-1H} & 0.956 & 0.889 & 1.000 & 0.956 & 0.027 & 53.646 \\
+\textbf{MLP-2H} & 0.948 & 0.844 & 1.000 & 0.956 & 0.034 & 442.021 \\\hline
+\end{tabular}%
+}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\caption{Parâmetros (PCA com redução).}
+\label{tab:param_pca_com_red}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccccccccc}
+\hline
+\textbf{Classificador} & \textbf{Scale} & \textbf{q} & \textbf{Normalização}& \textbf{Otimizador} & \textbf{Ativação}& \textbf{Hidden} & \textbf{LR} & \textbf{Epochs} & \textbf{L2} & \textbf{Clip}\\ \hline
+\textbf{MQ}     & 30x30 & 79 & minmax  & --      & --         & --        & --       & --  & 0.0001& -- \\
+\textbf{PL}     & 30x30 & 79 & zscore  & sgd     & --         & --        & 0.0050& 200 & 0.0001& -- \\
+\textbf{MLP-1H} & 30x30 & 79 & zscore  & rmsprop & swish      & (16,)     & 0.0200& 200 & 0.0001& 2.00\\
+\textbf{MLP-2H} & 30x30 & 79 & zscore  & rmsprop & leaky\_relu& (512, 64) & 0.0050& 300 & 0.0010& 0.00\\ \hline
+\end{tabular}%
+}
+\end{table}
+
+
+% ATIVIDADE 8:
+% UNIARIO
+model	best_params
+PCA_Baseline	{}
+AE_1H	{'hidden': (24,), 'activation': 'tanh', 'lr': 0.005, 'epochs': 200, 'l2': 0.0001, 'opt': 'nesterov', 'clip_grad': 5.0}
+AE_2H	{'hidden': (123, 49, 123), 'activation': 'tanh', 'lr': 0.01, 'epochs': 200, 'l2': 0.0001, 'opt': 'nesterov', 'clip_grad': 5.0}
+OneClassSVM	{'nu': 0.05, 'gamma': 0.1}
+IsolationForest	{'n_estimators': 200, 'random_state': 42}
+
+% ATIVIDADE 8
+% BINARIO
+Scale	q	Model	Hidden	Act	Opt	LR	Epochs	L2	Clip
+30x30	79	MQ						0.001	
+30x30	79	PL			rmsprop	0.01	200	0	
+30x30	79	MLP-1H	(64,)	leaky_relu	adam	0.02	300	0.001	2
+30x30	79	MLP-2H	(512, 256)	relu6	rmsprop	0.02	300	0.001	0
+
+"""
+
+
+- 
+
+
+
+

@@ -1,0 +1,133 @@
+\documentclass[a4paper,12pt]{article}
+
+% Pacotes essenciais
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{siunitx}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\title{Relatório Detalhado (Atividades 1-4): \ Classificação de Faces e o Impacto do Pré-processamento}
+\author{Lucas José Lemos Braz (Análise gerada por IA)}
+\date{Agosto, 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Introdução}
+
+Este relatório detalha a metodologia e os resultados das Atividades 1 a 4 do Projeto 2, focadas no reconhecimento de faces. O objetivo é estabelecer uma linha de base para o desempenho de quatro arquiteturas de classificadores (Mínimos Quadrados, Perceptron Logístico e MLPs de uma e duas camadas) e avaliar o impacto do pré-processamento inicial dos dados. As análises foram conduzidas em duas etapas principais:
+\begin{enumerate}
+    \item \textbf{Atividades 1-2:} Classificação diretamente sobre os pixels das imagens, investigando o efeito da resolução e da normalização.
+    \item \textbf{Atividades 3-4:} Avaliação do impacto da descorrelação dos atributos por meio da aplicação de PCA como uma operação de rotação, mantendo a dimensionalidade original.
+\end{enumerate}
+A análise aprofundada desta fase é fundamental para justificar as escolhas de pré-processamento nas etapas subsequentes do projeto.
+
+\section{Metodologia Detalhada}
+
+Para garantir a robustez estatística e a reprodutibilidade, foi implementado um protocolo experimental rigoroso.
+
+\subsection{Protocolo Experimental}
+O processo de avaliação seguiu três estágios para cada configuração experimental:
+
+\begin{enumerate}
+    \item \textbf{Busca de Hiperparâmetros:} Para cada modelo (exceto MQ), foi realizada uma busca aleatória (`random search`) com 200 amostras para encontrar a combinação ótima de hiperparâmetros, incluindo o tipo de normalização.
+    \item \textbf{Validação Interna:} Cada conjunto de hiperparâmetros amostrado foi avaliado 10 vezes com sementes aleatórias distintas em uma partição de validação interna. A média de acurácia dessas 10 execuções serviu como métrica de seleção, mitigando o risco de uma escolha enviesada por uma divisão de dados favorável.
+    \item \textbf{Avaliação Final:} O conjunto de hiperparâmetros vencedor foi então submetido a 50 repetições independentes (`repeat holdout`) com divisão estratificada (80% treino, 20% teste) para gerar as estatísticas finais de desempenho (média, desvio padrão, etc.). A estratificação garante que a proporção de imagens por sujeito seja preservada, o que é crucial para o dataset Yale A.
+\end{enumerate}
+
+\subsection{Análise de Escala e Pré-processamento}
+Na Atividade 1, foi realizado um estudo para selecionar a resolução de imagem ideal. As imagens foram redimensionadas para \(\20\times 20\), \(30\times 30\) e \(40\times 40\) pixels, resultando em vetores de 400, 900 e 1600 atributos, respectivamente. O tempo de treinamento foi medido para cada escala.
+
+A escala de \(30\times 30\) foi escolhida como o melhor balanço entre custo computacional e retenção de informação, evitando a perda de detalhes excessiva de resoluções menores e o custo proibitivo de resoluções maiores, especialmente para as redes neurais. As normalizações (\texttt{minmax}, \texttt{minmax\_pm1}, \texttt{zscore}) foram aplicadas após a divisão treino/teste para evitar vazamento de dados.
+
+\subsection{Modelos e Espaço de Busca de Hiperparâmetros}
+
+\paragraph{Classificador de Mínimos Quadrados (MQ):}
+Modelo linear com solução analítica. Utiliza a pseudo-inversa de Moore-Penrose para estabilidade numérica. O único hiperparâmetro ajustado foi a regularização L2.
+\begin{itemize}
+    \item \textbf{Regularização L2 (\texttt{l2}):} \{0.0, 1e-4, 1e-3, 1e-2, 1e-1\}
+\end{itemize}
+
+\paragraph{Perceptron Logístico (PL):}
+Classificador linear treinado com gradiente descendente e função de custo de entropia cruzada (via \emph{softmax}).
+\begin{itemize}
+    \item \textbf{Otimizador (\texttt{opt}):} \{sgd, momentum, nesterov, rmsprop, adam\}
+    \item \textbf{Taxa de Aprendizado (\texttt{lr}):} \{0.005, 0.01, 0.02\}
+    \item \textbf{Épocas (\texttt{epochs}):} \{100, 200, 300\}
+    \item \textbf{Regularização L2 (\texttt{l2}):} \{0.0, 1e-4, 1e-3\}
+\end{itemize}
+
+\paragraph{MLP de 1 e 2 Camadas Ocultas (MLP-1H, MLP-2H):}
+Redes neurais com capacidade de aprender fronteiras de decisão não-lineares. Utilizam \emph{softmax} e entropia cruzada na saída.
+\begin{itemize}
+    \item \textbf{Neurônios por Camada (\texttt{hidden}):} De 4 a 512 neurônios, explorando o balanço entre \emph{underfitting} e \emph{overfitting}.
+    \item \textbf{Função de Ativação (\texttt{activation}):} \{tanh, sigmoid, relu, leaky\_relu, relu6, swish\}
+    \item \textbf{Clipping de Gradiente (\texttt{clip\_grad}):} \{0.0 (desativado), 2.0, 5.0, 10.0\}. Técnica defensiva para previnir a explosão de gradientes e estabilizar o treino.
+    \item Demais hiperparâmetros idênticos ao PL.
+\end{itemize}
+
+\section{Resultados e Análise}
+
+\subsection{Atividades 1 e 2: Classificação no Espaço de Pixels}
+Nesta fase, os classificadores foram treinados diretamente sobre os vetores de pixels das imagens (escala \(30\times 30\)), após a normalização selecionada pela busca.
+
+\begin{table}[h!]
+\centering
+\caption{Resultados médios das Atividades 1-2 (sem PCA, escala \(30\times 30\)).}
+\label{tab:tabela1}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Classificador} & \textbf{Média} & \textbf{Mín} & \textbf{Máx} & \textbf{Med} & \textbf{DP} & \textbf{Tempo Total (ms)}\\\midrule
+MQ     & 0.965 & 0.911 & 1.000 & 0.978 & 0.024 & 8.516 \\
+PL     & 0.922 & 0.844 & 1.000 & 0.933 & 0.033 & 38.442 \\
+MLP-1H & 0.928 & 0.844 & 0.978 & 0.933 & 0.039 & 252.304 \\
+MLP-2H & 0.930 & 0.800 & 1.000 & 0.933 & 0.039 & 942.703 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\noindent\textbf{Discussão:} Contrariando a expectativa de que modelos mais complexos (MLPs) superariam os lineares, o classificador MQ obteve a melhor acurácia média e o menor desvio padrão, com um custo computacional ordens de magnitude inferior. Isso sugere que, para o dataset Yale A com suas condições controladas de iluminação e pose, as classes são razoavelmente bem separadas linearmente no espaço de pixels. As MLPs, apesar de sua capacidade teórica, apresentaram maior variabilidade e não superaram o MQ, um comportamento compatível com o regime de poucas amostras por classe (11 imagens/sujeito), onde o risco de sobreajuste é elevado.
+
+\subsection{Atividades 3 e 4: Efeito da PCA como Rotação}
+Aqui, a PCA foi aplicada mantendo a dimensionalidade original (\(q=d=900\)). O objetivo não é comprimir, mas sim rotacionar os dados para um novo sistema de coordenadas onde os eixos (componentes principais) são ortogonais, resultando em atributos de entrada descorrelacionados.
+
+\begin{table}[h!]
+\centering
+\caption{Resultados com a aplicação de PCA (sem redução de dimensionalidade).}
+\label{tab:tabela2}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Classificador} & \textbf{Média}& \textbf{Mín} & \textbf{Máx} & \textbf{Med} & \textbf{DP} & \textbf{Tempo Total (ms)} \\
+\midrule
+MQ     & 0.961 & 0.889 & 1.000 & 0.978 & 0.028 & 2.258 \\
+PL     & 0.867 & 0.778 & 0.933 & 0.867 & 0.037 & 29.576 \\
+MLP-1H & 0.826 & 0.644 & 0.956 & 0.822 & 0.062 & 109.268 \\
+MLP-2H & 0.840 & 0.689 & 0.956 & 0.822 & 0.053 & 299.309 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\noindent\textbf{Discussão:} A descorrelação dos dados teve dois efeitos principais. Primeiro, uma \textbf{redução expressiva no tempo de treinamento} para todos os modelos baseados em gradiente. Isso ocorre porque a descorrelação melhora o condicionamento numérico do problema, tornando a superfície de erro mais fácil de otimizar e acelerando a convergência. Segundo, observou-se uma \textbf{queda na acurácia} para todos os classificadores, exceto o MQ que se manteve estável. Embora a otimização seja mais rápida, a rotação pode ter desalinhado os dados de uma forma que tornou a fronteira de decisão linearmente separável mais difícil de ser encontrada pelos modelos PL e MLPs. Isso demonstra que a descorrelação, por si só, não garante uma melhor performance de classificação.
+
+\section{Conclusão das Atividades Iniciais}
+
+A análise das Atividades 1 a 4 permitiu extrair conclusões importantes que guiarão o restante do projeto:
+\begin{enumerate}
+    \item A escolha da resolução da imagem (\(30\times 30\)) representa um compromisso eficaz entre a preservação de informação e o custo computacional.
+    \item No espaço de pixels original, o classificador MQ se mostrou superior em acurácia e eficiência, indicando alta separabilidade linear no dataset Yale A.
+    \item A aplicação da PCA como rotação (sem redução de dimensionalidade) acelera significativamente o treinamento dos modelos de gradiente, mas pode degradar a acurácia final ao alterar a geometria de separação das classes.
+\end{enumerate}
+Esses resultados estabelecem uma linha de base robusta e motivam a próxima etapa de investigação: o uso da PCA para redução de dimensionalidade, buscando um equilíbrio entre eficiência computacional e poder discriminativo.
+
+\end{document}

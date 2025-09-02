@@ -1,0 +1,132 @@
+\documentclass[a4paper,12pt]{article}
+
+% Pacotes essenciais
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{siunitx}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\title{Relatório Detalhado (Atividade 8): \\ Controle de Acesso: Classificação Binária vs. Detecção de Anomalias}
+\author{Lucas José Lemos Braz (Análise gerada por IA)}
+\date{Agosto, 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Introdução}
+
+A Atividade 8 culmina o projeto ao abordar sua aplicação mais prática: a construção de um sistema de controle de acesso. O desafio é distinguir entre usuários autorizados e um "intruso". Este problema foi modelado de duas maneiras fundamentalmente distintas, cada uma com suas próprias hipóteses e implicações de segurança:
+\begin{itemize}
+    > <strong>Abordagem Supervisionada (Binária):</strong> Trata o intruso como uma nova classe a ser aprendida, transformando o problema em uma classificação multi-classe padrão.
+    > <strong>Abordagem Não Supervisionada (Unária):</strong> Trata o intruso como uma anomalia, aprendendo um modelo de "normalidade" apenas com os usuários autorizados e rejeitando o que não se conforma a ele.
+</itemize>
+Este relatório analisa e contrasta as duas implementações, destacando a superioridade conceitual e prática da abordagem unária para um sistema de segurança robusto.
+
+\section{Abordagem 1: Classificação Binária Supervisionada}
+
+\subsection{Filosofia e Metodologia}
+
+Nesta abordagem, o intruso é tratado como a 16ª classe do dataset. O modelo é treinado para aprender a aparência dos 15 usuários autorizados <strong> e </strong> a aparência específica do intruso. O pipeline de pré-processamento (`PCA -> Box-Cox -> Z-Score`) é aplicado a todos os dados, e os classificadores são otimizados para maximizar o F1-Score da classe "intruso".
+
+\subsection{Resultados e Análise Crítica}
+
+\begin{table}[h!]
+\centering
+\caption{A8 — Métricas de controle de acesso (classificação binária): média <strong> </strong> desvio padrão.}
+\label{tab:a8_binario}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+<strong>Classificador</strong> & <strong> Acurácia</strong> & <strong> FNR</strong> & <strong> FPR</strong> & <strong> Sensibilidade</strong> & <strong> Precisão</strong> \\
+\midrule
+MQ & 0.886 <strong> </strong> 0.052 & 0.000 <strong> </strong> 0.000 & 0.122 <strong> </strong> 0.055 & 1.000 <strong> </strong> 0.000 & 0.387 <strong> </strong> 0.119 \\
+PL & 0.877 <strong> </strong> 0.055 & 0.107 <strong> </strong> 0.205 & 0.124 <strong> </strong> 0.056 & 0.893 <strong> </strong> 0.205 & 0.355 <strong> </strong> 0.135 \\
+MLP-1H & 0.886 <strong> </strong> 0.052 & 0.000 <strong> </strong> 0.000 & 0.122 <strong> </strong> 0.055 & 1.000 <strong> </strong> 0.000 & 0.387 <strong> </strong> 0.119 \\
+MLP-2H & 0.884 <strong> </strong> 0.054 & 0.033 <strong> </strong> 0.137 & 0.122 <strong> </strong> 0.055 & 0.967 <strong> </strong> 0.137 & 0.379 <strong> </strong> 0.130 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\noindent<strong>Análise:</strong> Os resultados, especialmente para MQ e MLP-1H, mostram uma Taxa de Falsos Negativos (FNR) nula e sensibilidade máxima. Isso significa que o sistema foi perfeito em identificar o intruso <em> visto durante o treino</em>.
+
+<strong>Falha Conceitual:</strong> Este resultado, embora pareça excelente, é enganoso e perigoso. O modelo não aprendeu a detectar "intrusos" em geral; ele <strong> superespecializou-se (overfit)</strong> para reconhecer as características das 11 imagens daquele indivíduo específico. Este sistema oferece uma falsa sensação de segurança, pois falharia em detectar qualquer outro intruso cuja aparência não foi vista durante o treinamento.
+
+\section{Abordagem 2: Detecção de Anomalias (Unária)}
+
+\subsection{Filosofia e Metodologia Robusta}
+
+Esta é a abordagem conceitualmente correta para segurança. A filosofia é: "Aprenda apenas como são os usuários autorizados. Qualquer um que não se pareça com eles é um intruso."
+
+Para garantir uma avaliação imparcial, a metodologia foi rigorosa:
+\begin{enumerate}
+    > <strong> Separação de Dados:</strong> O conjunto de dados foi dividido em treino, validação e teste. O conjunto de treino continha <strong> apenas</strong> imagens de usuários autorizados.
+    > <strong> Otimização de Hiperparâmetros:</strong> O conjunto de validação (com autorizados e intrusos) foi usado para selecionar os melhores hiperparâmetros para os modelos (Autoencoder, One-Class SVM, Isolation Forest).
+    > <strong> Avaliação Final Cega:</strong> O conjunto de teste, completamente isolado, foi usado para a avaliação final. Crucialmente, o limiar de decisão foi definido de forma <strong> agnóstica aos intrusos</strong>, como o percentil 95 dos scores de anomalia dos dados de treino autorizados. Isso simula um cenário real onde o ponto de corte é definido sem nenhum conhecimento sobre possíveis ataques.
+</enumerate>
+
+\subsection{Resultados e Análise}
+
+\begin{table}[h!]
+\centering
+\caption{A8 — Métricas de controle de acesso (classificação unária): média <strong> </strong> desvio padrão.}
+\label{tab:a8_unario}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+<strong>Classificador</strong> & <strong> Acurácia</strong> & <strong> FNR</strong> & <strong> FPR</strong> & <strong> Sensibilidade</strong> & <strong> Precisão</strong> \\
+\midrule
+PCA\_Baseline & 0.748 <strong> </strong> 0.044 & 0.753 <strong> </strong> 0.136 & 0.031 <strong> </strong> 0.041 & 0.247 <strong> </strong> 0.136 & 0.773 <strong> </strong> 0.274 \\
+AE\_1H & 0.799 <strong> </strong> 0.051 & 0.529 <strong> </strong> 0.143 & 0.057 <strong> </strong> 0.046 & 0.471 <strong> </strong> 0.143 & 0.801 <strong> </strong> 0.152 \\
+AE\_2H & 0.367 <strong> </strong> 0.037 & 0.000 <strong> </strong> 0.000 & 0.912 <strong> </strong> 0.053 & 1.000 <strong> </strong> 0.000 & 0.326 <strong> </strong> 0.013 \\
+OneClassSVM & 0.369 <strong> </strong> 0.035 & 0.000 <strong> </strong> 0.000 & 0.908 <strong> </strong> 0.050 & 1.000 <strong> </strong> 0.000 & 0.327 <strong> </strong> 0.012 \\
+IsolationForest & 0.780 <strong> </strong> 0.047 & 0.613 <strong> </strong> 0.130 & 0.047 <strong> </strong> 0.050 & 0.387 <strong> </strong> 0.130 & 0.819 <strong> </strong> 0.171 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+<strong>Análise:</strong> Os resultados são muito mais realistas. O FNR é significativamente maior que zero, o que é esperado para um sistema que nunca viu o intruso antes. O Autoencoder de 1 camada (AE\_1H) e o Isolation Forest apresentam o melhor equilíbrio, com precisão acima de 80% e um FPR (taxa de usuários legítimos barrados) relativamente baixo, na casa de 5%. O One-Class SVM e o AE de 2 camadas falharam em generalizar, essencialmente rotulando quase todos como intrusos (FPR altíssimo), indicando um sobreajuste ao conjunto de treino.
+
+\section{Comparativo Final e Implicações}
+
+O contraste entre as duas abordagens revela uma lição fundamental em aprendizado de máquina aplicado à segurança.
+
+\begin{table}[h!]
+\centering
+\caption{Contraste entre as abordagens Binária e Unária.}
+\label{tab:comparativo_final}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{lll}
+\toprule
+<strong>Característica</strong> & <strong> Abordagem Supervisionada (Binária)</strong> & <strong> Abordagem Não Supervisionada (Unária)</strong> \\
+\midrule
+<strong> Hipótese</strong> & O intruso é uma classe conhecida. & O intruso é uma anomalia desconhecida. \\
+<strong> Dados de Treino</strong> & Autorizados + Intruso Específico & Apenas Autorizados \\
+<strong> Tarefa</strong> & Separar classes (Discriminativa) & Modelar a "normalidade" (Generativa/Fronteira) \\
+<strong> Generalização</strong> & <strong> Baixa.</strong> Falha com intrusos não vistos. & <strong> Alta.</strong> Potencial para detectar qualquer intruso. \\
+<strong> Validade no Mundo Real</strong> & <strong> Fraca.</strong> Sistema quebradiço e inseguro. & <strong> Forte.</strong> Abordagem padrão para segurança. \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\section{Conclusão Geral do Projeto}
+
+Este projeto percorreu um caminho completo de desenvolvimento e análise de um sistema de reconhecimento de faces. As conclusões-chave são:
+\begin{enumerate}
+    > O pré-processamento é vital. A redução de dimensionalidade com <strong> PCA (Atividades 5-6)</strong> provou ser o passo mais impactante, aumentando drasticamente a eficiência computacional e melhorando a acurácia ao remover ruído.
+    > A aplicação cega de técnicas, mesmo as consideradas "boas práticas" como a <strong> transformação Box-Cox (Atividade 7)</strong>, pode ser prejudicial se não for justificada pelo estado dos dados no pipeline.
+    > Para problemas de segurança do mundo real, a escolha da <strong> filosofia de modelagem (Atividade 8)</strong> é mais importante do que pequenos ajustes de hiperparâmetros. A abordagem binária, apesar de métricas atraentes, é metodologicamente falha e perigosa. A <strong> abordagem unária (detecção de anomalias)</strong>, embora mais desafiadora, é a única que fornece uma base para um sistema de segurança generalizável e verdadeiramente robusto.
+</enumerate>
+
+O trabalho demonstra que um pipeline bem-sucedido não é apenas uma sequência de algoritmos, mas um argumento construído em etapas, onde cada decisão é justificada por evidências empíricas e análise crítica.
+
+\end{document}
