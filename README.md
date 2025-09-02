@@ -1,4 +1,4 @@
-# Trabalhos de Iniciação Científica Aplicada
+# Trabalhos de Inteligência Computacional Aplicada
 
 > Este repositório contém as implementações, experimentos e análises para os trabalhos da disciplina de Inteligência Computacional Aplicada. O projeto aborda dois problemas principais: regressão de preços de imóveis e reconhecimento de faces.
 
