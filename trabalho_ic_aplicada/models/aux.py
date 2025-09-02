@@ -25,7 +25,7 @@ def calcular_metricas_normalizadas(y_pred_testes, y_reais_testes):
         valor_medio = np.mean(y_pred)
         # Calcula RMSE: raiz quadrada da média das diferenças quadráticas
         rmse = np.sqrt(np.mean((y_real - y_pred) ** 2))
-        rmse_normalizado = rmse / valor_medio
+        rmse_normalizado = rmse / max(abs(valor_medio), 1e-10)
         
         valores_medios.append(valor_medio)
         rmses_normalizados.append(rmse_normalizado)
