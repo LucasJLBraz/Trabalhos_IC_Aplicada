@@ -1,10 +1,10 @@
 # Trabalhos de Iniciação Científica Aplicada
 
-> Este repositório contém as implementações, experimentos e análises para os trabalhos da disciplina de Iniciação Científica Aplicada. O projeto aborda dois problemas principais: regressão de preços de imóveis e reconhecimento de faces.
+> Este repositório contém as implementações, experimentos e análises para os trabalhos da disciplina de Inteligência Computacional Aplicada. O projeto aborda dois problemas principais: regressão de preços de imóveis e reconhecimento de faces.
 
 ## 📖 Índice
 
-- [Trabalhos de Iniciação Científica Aplicada](#trabalhos-de-iniciação-científica-aplicada)
+- [Trabalhos de Inteligência Computacional Aplicada](#trabalhos-de-inteligencia-computacional-aplicada)
   - [📖 Índice](#-índice)
   - [🎯 Visão Geral](#-visão-geral)
   - [📂 Estrutura do Repositório](#-estrutura-do-repositório)
