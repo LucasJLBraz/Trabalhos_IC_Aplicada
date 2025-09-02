@@ -1,29 +1,86 @@
-# Trabalhos de Inteligência Computacional Aplicada
+# Trabalhos de Iniciação Científica Aplicada
 
-Este repositório contém as implementações e experimentos para os trabalhos da disciplina de Inteligência Computacional Aplicada (TIP7077/CCP9011).
+> Este repositório contém as implementações, experimentos e análises para os trabalhos da disciplina de Iniciação Científica Aplicada. O projeto aborda dois problemas principais: regressão de preços de imóveis e reconhecimento de faces.
 
-## Estrutura do Projeto
+## 📖 Índice
 
-- **/trabalho_ic_aplicada**: Biblioteca Python com os módulos principais, incluindo implementações dos modelos, processamento de dados e otimizadores.
-- **/src**: Scripts Python executáveis para rodar os experimentos do Trabalho 2.
-- **/notebooks**: Jupyter Notebooks utilizados para os experimentos do Trabalho 1.
-- **/data**: Diretório para armazenar os datasets.
-  - **/data/raw**: Dados brutos, como o dataset de faces.
-- **/results**: Saídas geradas pelos scripts, como tabelas de resultados (.csv) e figuras (.png).
-- **/references**: Enunciados dos trabalhos e outros materiais de apoio.
+- [Trabalhos de Iniciação Científica Aplicada](#trabalhos-de-iniciação-científica-aplicada)
+  - [📖 Índice](#-índice)
+  - [🎯 Visão Geral](#-visão-geral)
+  - [📂 Estrutura do Repositório](#-estrutura-do-repositório)
+  - [🚀 Como Reproduzir os Resultados](#-como-reproduzir-os-resultados)
+    - [1. Configuração do Ambiente](#1-configuração-do-ambiente)
+    - [2. Execução dos Experimentos](#2-execução-dos-experimentos)
+      - [Trabalho 1: Regressão de Valores de Imóveis](#trabalho-1-regressão-de-valores-de-imóveis)
+      - [Trabalho 2: Reconhecimento de Faces](#trabalho-2-reconhecimento-de-faces)
+        - [Opção A: Execução Automatizada (Recomendado)](#opção-a-execução-automatizada-recomendado)
+        - [Opção B: Execução Manual por Atividade](#opção-b-execução-manual-por-atividade)
+  - [📊 Resultados e Relatórios](#-resultados-e-relatórios)
 
-## Setup do Ambiente
+## 🎯 Visão Geral
+
+Este projeto é dividido em duas partes principais (Trabalhos 1 e 2):
+
+1.  **Trabalho 1 (TC1):** Focado em **Regressão**. Foram implementados e avaliados quatro modelos para prever o valor de imóveis:
+    *   Regressão Linear Múltipla (via Mínimos Quadrados - MQ)
+    *   Perceptron de Regressão (treinado com Regra Delta)
+    *   Multi-Layer Perceptron (MLP) com 1 camada oculta
+    *   Multi-Layer Perceptron (MLP) com 2 camadas ocultas
+
+2.  **Trabalho 2 (TC2):** Focado em **Classificação e Reconhecimento de Faces**. O objetivo foi desenvolver um sistema de reconhecimento facial, explorando:
+    *   Classificadores: Mínimos Quadrados (MQ), Perceptron Logístico (PL) e MLP.
+    *   Extração de características com Análise de Componentes Principais (PCA).
+    *   Impacto de pré-processamento, como a transformação de Box-Cox.
+    *   Análise de um cenário de segurança com detecção de "intrusos".
+
+## 📂 Estrutura do Repositório
+
+O projeto está organizado da seguinte forma para garantir clareza e reprodutibilidade:
+
+```
+/
+├── data/                 # Datasets (brutos, processados, etc.).
+├── notebooks/            # Jupyter Notebooks para análises e experimentos.
+├── references/           # Enunciados, artigos e material de apoio.
+├── results/              # Saídas dos experimentos (tabelas .csv, figuras .png).
+├── src/                  # Scripts Python executáveis para os experimentos.
+├── trabalho_ic_aplicada/ # Pacote Python principal do projeto.
+│   ├── models/           # Implementações dos modelos e algoritmos.
+│   │   ├── clf_mqo.py: Classificador por Mínimos Quadrados (`LeastSquaresClassifier`).
+│   │   ├── clf_pl.py: Classificador por Perceptron Logístico (`SoftmaxRegression`).
+│   │   ├── clf_mlp.py: Classificador Multi-Layer Perceptron (`MLPClassifier`).
+│   │   ├── reg_perceptron.py: Funções para Regressão com Perceptron (estilo procedural).
+│   │   ├── ridge_reg_linear_MQO.py: Funções para Regressão Ridge (estilo procedural).
+│   │   ├── reg_mlp.py: Funções para Regressão com MLP (estilo procedural).
+│   │   ├── reg_mlp_class.py: Classe para Regressão com MLP (`MLPRegressor`).
+│   │   ├── pca_np.py: Implementação do PCA com NumPy (`PCA_np`).
+│   │   ├── optim.py: Otimizadores (Adam, SGD, etc.) para treino de redes neurais.
+│   │   ├── preprocess_np.py: Classes para pré-processamento (normalização Z-Score, MinMax).
+│   │   └── aux.py: Funções auxiliares para métricas, plots e validação cruzada.
+│   ├── dataset_faces.py  # Módulos de carregamento de dados de faces.
+├── requirements.txt      # Dependências do projeto Python.
+├── run_all_experiments.sh # Script para executar todos os experimentos do TC2.
+└── README.md             # Este arquivo.
+```
+
+## 🚀 Como Reproduzir os Resultados
+
+Siga os passos abaixo para configurar o ambiente e executar os experimentos.
+
+### 1. Configuração do Ambiente
 
 1.  **Clone o repositório:**
     ```bash
-    git clone <url-do-repositorio>
+    # Substitua pela URL do seu repositório
+    git clone https://github.com/seu-usuario/Trabalhos_IC_Aplicada.git
     cd Trabalhos_IC_Aplicada
     ```
 
-2.  **Crie um ambiente virtual (recomendado):**
+2.  **Crie e ative um ambiente virtual:**
     ```bash
-    python -m venv .venv
-    source .venv/bin/activate  # No Windows: .venv\Scripts\activate
+    python3 -m venv .venv
+    source .venv/bin/activate
+    # No Windows, use: .venv\Scripts\activate
     ```
 
 3.  **Instale as dependências:**
@@ -31,96 +88,69 @@ Este repositório contém as implementações e experimentos para os trabalhos d
     pip install -r requirements.txt
     ```
 
----
+4.  **Setup dos Dados (Apenas para o Trabalho 2):**
+    *   Baixe o dataset **Yale A**.
+    *   Crie o diretório: `data/raw/Kit_projeto_FACES/`.
+    *   Descompacte o conteúdo do dataset neste diretório. O código espera que as imagens de cada pessoa estejam em subpastas (ex: `subject01`, `subject02`, etc.).
 
-## Trabalho 1: Regressão de Valores de Imóveis
+### 2. Execução dos Experimentos
 
-### Objetivo
+#### Trabalho 1: Regressão de Valores de Imóveis
 
-Implementar e avaliar modelos de regressão — Regressão Linear Múltipla (MQ), Perceptron de Regressão (PS) e Redes Neurais Artificiais (MLP com 1 e 2 camadas ocultas) — para prever o valor de imóveis, utilizando o dataset "Real estate valuation".
+Os experimentos do TC1 estão nos Jupyter Notebooks e devem ser executados manualmente. O dataset é baixado automaticamente.
 
-### Como Executar
+Abra e execute as células dos notebooks na pasta `notebooks/TC1/` na seguinte ordem:
 
-Os experimentos estão implementados nos Jupyter Notebooks localizados na pasta `notebooks/TC1/`. O dataset é baixado automaticamente via `ucimlrepo`.
+1.  `0.03-ljlb-regressao-multipla-MQO.ipynb` (Modelo MQ)
+2.  `1.03-ljlb-regressao-perceptron-simples.ipynb` (Perceptron de Regressão)
+3.  `2.03-ljlb-regressao-MLP_H1.ipynb` (MLP com 1 camada oculta)
+4.  `2.03-ljlb-regressao-MLP_H2.ipynb` (MLP com 2 camadas ocultas)
 
-Para reproduzir os resultados, execute as células dos seguintes notebooks em ordem:
+#### Trabalho 2: Reconhecimento de Faces
 
-1.  **`notebooks/TC1/0.03-ljlb-regressao-multipla-MQO.ipynb`**: Implementa e avalia o modelo de Regressão Linear por Mínimos Quadrados.
-2.  **`notebooks/TC1/1.03-ljlb-regressao-perceptron-simples.ipynb`**: Implementa e avalia o Perceptron de Regressão, treinado com a Regra Delta.
-3.  **`notebooks/TC1/2.03-ljlb-regressao-MLP_H1.ipynb`**: Implementa e avalia a MLP com uma camada oculta.
-4.  **`notebooks/TC1/2.03-ljlb-regressao-MLP_H2.ipynb`**: Implementa e avalia a MLP com duas camadas ocultas.
+Para o TC2, você pode executar tudo de uma vez ou cada script individualmente.
 
-Cada notebook é autônomo e gera as análises solicitadas no enunciado, incluindo:
-- Histograma dos resíduos.
-- Gráfico de dispersão do valor real vs. predito.
-- Coeficiente de correlação e outras métricas de avaliação.
+##### Opção A: Execução Automatizada (Recomendado)
 
----
-
-## Trabalho 2: Reconhecimento de Faces
-
-### Objetivo
-
-Desenvolver e avaliar um sistema de reconhecimento de faces utilizando os classificadores: Mínimos Quadrados (MQ), Perceptron Logístico (PL) e MLP (1 e 2 camadas). O trabalho explora a extração de características com Análise de Componentes Principais (PCA) e o impacto de diferentes etapas de pré-processamento.
-
-### Setup de Dados
-
-1.  **Baixe o dataset Yale A.**
-2.  Crie o diretório `data/raw/Kit_projeto_FACES/`.
-3.  Descompacte o conteúdo do dataset dentro deste diretório. O código está preparado para ler imagens organizadas em subpastas por sujeito (ex: `data/raw/Kit_projeto_FACES/subject01/...`) ou em um formato plano onde os arquivos são nomeados como `subject01.centerlight`.
-
-### Como Executar
-
-Os experimentos são automatizados por meio de scripts na pasta `src/`. Os resultados (tabelas e figuras) são salvos automaticamente no diretório `results/`.
-
-#### Atividades 1 a 4: Seleção de Escala e Comparativo Sem/Com PCA "Rotate"
-
-Execute o script para realizar a busca de hiperparâmetros e avaliar os modelos sem PCA e com PCA no modo "rotate" (sem redução de dimensão).
+Use o script `run_all_experiments.sh` para executar todas as atividades (A1 a A8) em sequência.
 
 ```bash
-python src/tc2_faces_A1_A4.py
+bash run_all_experiments.sh
 ```
 
-**Saídas:**
-- `results/tempo_escala_A1_A2.png`: Gráfico de tempo de treino por escala de imagem.
-- `results/tabela1.csv`: Resultados da avaliação dos modelos sem PCA.
-- `results/tabela2.csv`: Resultados da avaliação com PCA "rotate".
-
-#### Atividades 5 e 6: Redução de Dimensionalidade com PCA
-
-Execute o script para determinar a dimensão `q` ideal para o PCA e reavaliar os modelos.
+Alternativamente, você pode usar o `Makefile`:
 
 ```bash
-python src/tc2_faces_A5_A6.py
+make all
 ```
 
-**Saídas:**
-- `results/pca_variance_explained_A3.png`: Gráfico da variância explicada acumulada.
-- `results/pca_q_98.txt`: Arquivo de texto com a dimensão `q` escolhida para reter ≥98% da variância.
-- `results/tabela3.csv`: Resultados da avaliação com PCA e redução de dimensionalidade.
+##### Opção B: Execução Manual por Atividade
 
-#### Atividade 7: Pipeline com Transformação de Box-Cox
+Execute os scripts na pasta `src/` na ordem desejada. Cada script corresponde a uma ou mais atividades do enunciado.
 
-Execute o script para avaliar o pipeline completo, adicionando a transformação de Box-Cox após o PCA.
+-   **Atividades 1-4 (Comparativo com/sem PCA "rotate"):**
+    ```bash
+    python src/tc2_faces_A1_A4.py
+    ```
 
-```bash
-python src/tc2_faces_A7.py
-```
+-   **Atividades 5-6 (PCA com redução de dimensão):**
+    ```bash
+    python src/tc2_faces_A5_A6.py
+    ```
 
-**Saídas:**
-- `results/tabela3_boxcox.csv`: Resultados da avaliação com o pipeline PCA + Box-Cox.
-- `results/tabela3_comparativo_A7.csv`: Tabela comparativa dos resultados com e sem Box-Cox.
-- `results/comparativo_A7_acc.png`: Gráfico comparativo de acurácia.
+-   **Atividade 7 (Pipeline com Box-Cox):**
+    ```bash
+    python src/tc2_faces_A7.py
+    ```
 
-#### Atividade 8: Cenário de Controle de Acesso (Intruso)
+-   **Atividade 8 (Cenário com Intruso):**
+    *   **Setup extra:** Adicione as imagens do "intruso" ao dataset. O script `trabalho_ic_aplicada/dataset_faces.py` identifica como intruso qualquer classe (subpasta) cujo nome **não** comece com "subject".
+    *   Execute o script:
+    ```bash
+    python src/tc2_faces_A8.py
+    ```
 
-**Setup Extra:** Para este cenário, adicione as imagens do "intruso" ao dataset. O script `trabalho_ic_aplicada/dataset_faces.py` identifica como intruso qualquer classe (subpasta) cujo nome **não** comece com "subject".
+## 📊 Resultados e Relatórios
 
-Após adicionar os dados do intruso, execute o script:
-
-```bash
-python src/tc2_faces_A8.py
-```
-
-**Saídas:**
-- `results/tabela4_intruso.csv`: Tabela com as métricas de desempenho para o cenário de controle de acesso, incluindo taxa de falsos negativos (FNR) e falsos positivos (FPR).
+-   **Saídas dos Experimentos:** Todas as tabelas (`.csv`) e figuras (`.png`) geradas pelos scripts são salvas no diretório `/results`, organizadas por trabalho.
+-   **Relatório Final:** O relatório acadêmico está sendo desenvolvido em LaTeX. Os arquivos-fonte (`.tex`) e o PDF final podem ser encontrados em `/relatorio`
