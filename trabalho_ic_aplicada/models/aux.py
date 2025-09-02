@@ -4,6 +4,48 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+def calcular_metricas_normalizadas(y_pred_testes, y_reais_testes):
+    """
+    Calcula o valor médio do output e o RMSE normalizado pelo valor médio para múltiplos folds.
+    
+    Args:
+        y_pred_testes: lista de arrays, onde cada array contém as predições de um fold
+        y_reais_testes: lista de arrays, onde cada array contém os valores reais de um fold
+        
+    Returns:
+        valor_medio: média das predições
+        valor_medio_std: desvio padrão das médias
+        rmse_normalizado: média dos RMSEs normalizados
+        rmse_normalizado_std: desvio padrão dos RMSEs normalizados
+    """
+    valores_medios = []
+    rmses_normalizados = []
+    
+    for y_pred, y_real in zip(y_pred_testes, y_reais_testes):
+        valor_medio = np.mean(y_pred)
+        # Calcula RMSE: raiz quadrada da média das diferenças quadráticas
+        rmse = np.sqrt(np.mean((y_real - y_pred) ** 2))
+        rmse_normalizado = rmse / max(abs(valor_medio), 1e-10)
+        
+        valores_medios.append(valor_medio)
+        rmses_normalizados.append(rmse_normalizado)
+    
+    # Calcula médias e desvios padrão
+    valor_medio_final = np.mean(valores_medios)
+    valor_medio_std = np.std(valores_medios)
+    rmse_normalizado_final = np.mean(rmses_normalizados)
+    rmse_normalizado_std = np.std(rmses_normalizados)
+
+
+
+    # print(f"Avg. house price: {valor_medio_final:.4f} ± {valor_medio_std:.4f}")
+    # print(f"RSME/Avg. house price: {eqm_normalizado_final:.4f} ± {eqm_normalizado_std:.4f}")
+    print(f"Avg. house price: {valor_medio_final:.4f} ± {valor_medio_std:.4f}")
+    print(f"RSME/Avg. house price: {rmse_normalizado_final:.4f} ± {rmse_normalizado_std:.4f}")
+
+    return valor_medio_final, valor_medio_std, rmse_normalizado_final, rmse_normalizado_std
+
+
 def error_rit_rate(y_test:np.ndarray, y_pred:np.ndarray, porcentagem:float = 0.20) -> float:
     """"
     Calcula quantas previsões estão dentro de uma porcentagem do valor real.
@@ -75,9 +117,12 @@ def validacao_cruzada_kfold(X: np.ndarray, y: np.ndarray, k: int = 10) -> list:
 
 
 
-def plot_disperssao_hist_residuo(y_train: np.ndarray, y_train_pred: np.ndarray, y_test: np.ndarray, y_test_pred: np.ndarray, title: str) -> None:
+def plot_disperssao_hist_residuo(y_train: np.ndarray, y_train_pred: np.ndarray, 
+                                y_test: np.ndarray, y_test_pred: np.ndarray, 
+                                title: str) -> None:
     """
     Plota a dispersão dos plots e histogramas dos resíduos para os conjuntos de treino e teste.
+    Inclui linha de tendência e linha x=y para comparação.
 
     Args:
         y_train (np.ndarray): Valores reais do conjunto de treino.
@@ -86,60 +131,57 @@ def plot_disperssao_hist_residuo(y_train: np.ndarray, y_train_pred: np.ndarray, 
         y_test_pred (np.ndarray): Valores previstos pelo modelo no conjunto de teste.
         title (str): Titulo do plot.
     """
-
     # Calcula os resíduos
     residuos_train = y_train - y_train_pred
     residuos_test = y_test - y_test_pred
 
     # Cria a figura e os eixos
     fig, axs = plt.subplots(2, 2, figsize=(12, 10))
-
     plt.title(title)
-    # Gráfico de dispersão dos resíduos do treino
-    axs[0, 0].scatter(y_train, y_train_pred, alpha=0.5)
-    # axs[0, 0].axhline(0, color='red', linestyle='--')
-    axs[0, 0].set_title('Dispersão do Real X Previsto - Treino')
-    axs[0, 0].set_xlabel('Valores Real - Treino')
-    axs[0, 0].set_ylabel('Valores Previsto - Treino')
 
-    # Ajusta os eixos para melhor visualização- ambos os eixos devem ter o mesmo limite
-    min_val = min(np.min(y_train), np.min(y_train_pred))
-    max_val = max(np.max(y_train), np.max(y_train_pred))
+    # Configuração comum para os plots de dispersão
+    def config_scatter_plot(ax, x, y, title_suffix):
+        # Scatter plot
+        ax.scatter(x, y, alpha=0.5)
+        
+        # Linha x=y (diagonal ideal)
+        min_val = min(np.min(x), np.min(y))
+        max_val = max(np.max(x), np.max(y))
+        ax.plot([min_val, max_val], [min_val, max_val], 
+                'gray', linestyle='--', alpha=0.8, label='x=y')
+        
+        # Linha de tendência
+        z = np.polyfit(x, y, 1)
+        p = np.poly1d(z)
+        ax.plot(x, p(x), "r-", alpha=0.8, label='Tendência')
+        
+        # Configurações do plot
+        ax.set_title(f'Dispersão do Real X Previsto - {title_suffix}')
+        ax.set_xlabel(f'Valores Real - {title_suffix}')
+        ax.set_ylabel(f'Valores Previsto - {title_suffix}')
+        ax.legend()
+        
+        # Ajusta os limites
+        ax.set_xlim(min_val, max_val)
+        ax.set_ylim(min_val, max_val)
 
-    axs[0, 0].set_xlim(min_val, max_val)
-    axs[0, 0].set_ylim(min_val, max_val)
+    # Plot de dispersão - Treino
+    config_scatter_plot(axs[0, 0], y_train, y_train_pred, 'Treino')
 
-    # Histograma dos resíduos do treino
+    # Histograma dos resíduos - Treino
     sns.histplot(residuos_train, bins=30, alpha=0.7, kde=True, ax=axs[0, 1])
     axs[0, 1].set_title('Histograma dos Resíduos - Treino')
     axs[0, 1].set_xlabel('Resíduos - Treino')
     axs[0, 1].set_ylabel('Frequência')
 
-    # Gráfico de dispersão dos resíduos do teste
-    axs[1, 0].scatter(y_test, y_test_pred, alpha=0.5)
-    # axs[1, 0].axhline(0, color='red', linestyle='--')
-    axs[1, 0].set_title('Dispersão do Real X Previsto - Teste')
-    axs[1, 0].set_xlabel('Valores Real - Treino')
-    axs[1, 0].set_ylabel('Valores Previsto - Treino')
+    # Plot de dispersão - Teste
+    config_scatter_plot(axs[1, 0], y_test, y_test_pred, 'Teste')
 
-    # Ajusta os eixos para melhor visualização- ambos os eixos devem ter o mesmo limite
-    # min_val = min(np.min(y_test), np.min(y_test_pred))
-    # max_val = max(np.max(y_test), np.max(y_test_pred))
-
-    axs[1, 0].set_xlim(min_val, max_val)
-    axs[1, 0].set_ylim(min_val, max_val)
-
-    #
-    # axs[1, 0].set_xlim(0, 80)
-    # axs[1, 0].set_ylim(0, 80)
-
-    # Histograma dos resíduos do teste
+    # Histograma dos resíduos - Teste
     sns.histplot(residuos_test, bins=30, alpha=0.7, kde=True, ax=axs[1, 1])
     axs[1, 1].set_title('Histograma dos Resíduos - Teste')
     axs[1, 1].set_xlabel('Resíduos - Teste')
     axs[1, 1].set_ylabel('Frequência')
-
-
 
     # Ajusta o layout
     plt.tight_layout()
@@ -285,7 +327,7 @@ def plot_folds_loss(train_losses, titulo='Histórico da Função de Perda - Trei
     """
     plt.figure(figsize=(10,6))
     for i, loss_history in enumerate(train_losses):
-        plt.plot(loss_history, label=f'Fold {i+1}', alpha=0.5)
+        plt.plot(loss_history, alpha=1)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(titulo)
@@ -300,7 +342,7 @@ def plot_folds_loss(train_losses, titulo='Histórico da Função de Perda - Trei
     std_loss = train_losses_array.std(axis=0)
 
     plt.figure(figsize=(10,6))
-    plt.plot(mean_loss, color='black', label='Média dos folds', linewidth=2)
+    plt.plot(mean_loss, color='black', linewidth=2)
     plt.fill_between(range(len(mean_loss)), mean_loss-std_loss, mean_loss+std_loss, color='gray', alpha=0.2, label='±1 Desvio padrão')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)

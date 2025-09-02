@@ -2,6 +2,7 @@
 import os
 import re
 import numpy as np
+from PIL import Image, ImageOps
 
 try:
     import imageio.v3 as iio  # leve e lê PGM/JPG/PNG
@@ -94,10 +95,18 @@ def _read_pgm_fallback(path: str) -> np.ndarray:
     return img
 
 def _imread_any(path: str) -> np.ndarray:
-    # tenta com imageio; se falhar (sem extensão, plugin), usa fallback PGM
     try:
-        return iio.imread(path)
+        img = iio.imread(path)
+        if img.ndim > 2 and img.shape[0] == 1:
+            img = img[0]
+        # Fix orientation using PIL if RGB
+        if img.ndim == 3 and img.shape[2] in (3, 4):
+            with Image.open(path) as pil_img:
+                pil_img = ImageOps.exif_transpose(pil_img)
+                img = np.array(pil_img)
+        return img
     except Exception:
+        print(f"Falling back to PGM reader for {path}")
         return _read_pgm_fallback(path)
 
 # -----------------------------
@@ -132,85 +141,73 @@ def _build_from_subfolders(root_dir: str, size: tuple[int, int]):
     return X, y, idx2class
 
 _SUBJECT_RE = re.compile(r"^subject(\d+)", re.IGNORECASE)
+_INTRUDER_RE = re.compile(r"^intruso", re.IGNORECASE)
 
-def _build_from_flat(root_dir: str, size: tuple[int, int]):
+def _build_from_flat(root_dir: str, size: tuple[int, int], load_intruders: bool = False):
     files = sorted([f for f in os.listdir(root_dir) if os.path.isfile(os.path.join(root_dir, f))])
-    # filtra óbvios não-imagem
-    skip_suffixes = {".m", ".txt", ".dat", ".zip", ".eps", ".wav", ".jpg", ".jpeg"}  # jpg real entra via imageio no caminho feliz; eps/wav/zip não
-    paths = []
+    
+    X_list, y_list = [], []
+    class_map = {}  # str subjectNN -> int id
+
     for f in files:
         if f.startswith("."):
             continue
-        if any(f.lower().endswith(suf) for suf in skip_suffixes):
-            # exceção: queremos permitir .jpg reais — mas já filtramos acima. Ajuste se precisar.
-            if f.lower().endswith((".jpg",".jpeg",".png",".bmp",".pgm",".ppm",".pbm")):
-                pass
-            else:
-                continue
-        # aceita nomes tipo subject01.centerlight (sem extensão)
-        m = _SUBJECT_RE.match(f)
-        if m is None:
-            # ainda pode ser imagem normal com extensão; deixa imageio decidir
-            pass
-        paths.append(os.path.join(root_dir, f))
 
-    if not paths:
-        raise ValueError(f"Nenhum arquivo de imagem elegível encontrado em {root_dir}.")
+        m_subj = _SUBJECT_RE.match(f)
+        m_intr = _INTRUDER_RE.match(f) if load_intruders else None
 
-    X_list, y_list = [], []
-    idx2class = {}
-    class_map = {}  # str subjectNN -> int id
-    for path in paths:
-        base = os.path.basename(path)
-        m = _SUBJECT_RE.match(base)
-        if m is None:
-            # tenta assim mesmo (pode ser PNG/JPG etc em um flat set)
-            try:
-                img = _imread_any(path)
-            except Exception:
-                continue
-            cname = "unknown"
+        cname = None
+        if m_subj:
+            cname = f"subject{int(m_subj.group(1)):02d}"
+        elif m_intr:
+            cname = "intruder"
         else:
-            cname = f"subject{int(m.group(1)):02d}"
+            continue  # Ignora arquivos que não correspondem a nenhum padrão
+
         if cname not in class_map:
             class_map[cname] = len(class_map)
         cid = class_map[cname]
+
         try:
+            path = os.path.join(root_dir, f)
             img = _imread_any(path)
+            g = _to_gray(img)
+            g = _resize_nn(g, size)
+            X_list.append(g.flatten())
+            y_list.append(cid)
         except Exception:
             continue
-        g = _to_gray(img)
-        g = _resize_nn(g, size)
-        X_list.append(g.flatten())
-        y_list.append(cid)
 
     if not X_list:
         raise ValueError(f"Nenhuma imagem válida lida em {root_dir} (formato flat).")
 
     X = np.vstack(X_list)
     y = np.asarray(y_list, dtype=int)
-    # monta idx2class ordenado por id
     idx2class = {v: k for k, v in class_map.items()}
     return X, y, idx2class
 
-def build_face_dataset(root_dir: str, size: tuple[int, int]) -> tuple[np.ndarray, np.ndarray, dict]:
+def build_face_dataset(root_dir: str, size: tuple[int, int], load_intruders: bool = False) -> tuple[np.ndarray, np.ndarray, dict]:
     """
     Suporta:
       1) subpastas por classe (root_dir/sujeitoX/arquivos...)
       2) diretório flat com nomes estilo Yale A: subjectNN.<condicao>
+    Se `load_intruders` for True, também carrega arquivos com padrão `intrusoXX`.
     """
+    # A lógica de subpastas não precisa mudar, pois intrusos geralmente estão no modo flat.
     sub = _build_from_subfolders(root_dir, size)
     if sub is not None:
+        # Esta parte é uma simplificação; se intrusos pudessem estar em subpastas,
+        # a lógica precisaria ser mais complexa. Para este projeto, está OK.
         return sub
-    # se não há subpastas, tenta formato flat
-    return _build_from_flat(root_dir, size)
+    return _build_from_flat(root_dir, size, load_intruders=load_intruders)
 
-def load_scales_from_root(root_dir: str, sizes: list[tuple[int,int]]):
+def load_scales_from_root(root_dir: str, sizes: list[tuple[int,int]], load_intruders: bool = False):
     """
     Constrói datasets para várias escalas: [(label, X, y), ...]
     """
     datasets = []
     for (h, w) in sizes:
-        X, y, _ = build_face_dataset(root_dir, (h, w))
+        X, y, _ = build_face_dataset(root_dir, (h, w), load_intruders=load_intruders)
         datasets.append((f"{h}x{w}", X, y))
     return datasets
+

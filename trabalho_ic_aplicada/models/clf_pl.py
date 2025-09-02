@@ -40,6 +40,12 @@ class SoftmaxRegression:
             self.loss_history_.append(float(ce))
         return self
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
         Xb = self._add_bias(X)
-        return np.argmax(_softmax(Xb @ self.W_), axis=1)
+        return _softmax(Xb @ self.W_)
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return self.predict_proba(X).argmax(axis=1)
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        Xb = self._add_bias(X)
+        return _softmax(Xb @ self.W_)
